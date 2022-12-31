@@ -5,7 +5,7 @@ const params = new URLSearchParams(window.location.search)
  * @property {string} name
  * @property {string} title
  * @property {string} titleShort
- * @property {string[]} desc
+ * @property {string} desc
  * @property {Object.<string, number>} skills
  * @property {string[]} disabledWork
  * @property {string[]} requiredWork
@@ -212,7 +212,7 @@ class Pawn {
 function buildBackstorySelect(select, backstoryList) {
     backstoryList.sort((a, b) => a.title.toLowerCase() < b.title.toLowerCase() ? -1 : 1);
     backstoryList.forEach((backstory, bs_index, bs_array) => {
-        let desc = backstory.desc[0];
+        let desc = backstory.desc;
         if (backstory.skills.size > 0) desc += `\n`;
         for (const skill in backstory.skills) {
             desc += `\n${skill}: ${backstory.skills[skill] < 0 ? "" : "+"}${backstory.skills[skill]}`

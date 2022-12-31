@@ -173,5 +173,6 @@ for drug in drugs:
 
 genesFileTS = open(Path("./data/genes.ts").resolve(), "w+")
 genesFileJS = open(Path("./page/genes.js").resolve(), "w+")
-genesFileTS.write(f"export var genes = {json.dumps(genes)};")
-genesFileJS.write("/** @type { Gene[] } */\n" + f"var genes = {json.dumps(genes)};")
+jsonString = json.dumps(genes, separators=(",", ":"))
+genesFileTS.write(f"export var genes = {jsonString};")
+genesFileJS.write("/** @type { Gene[] } */\n" + f"var genes = {jsonString};")

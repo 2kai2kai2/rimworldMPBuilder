@@ -15,7 +15,7 @@ files = list(filter(lambda x: x.name not in exclude,
 class backstory:
     @staticmethod
     def cleanDescription(text: str) -> str:
-        return text.replace("\\n", "\n").replace("\n\n", "\n").replace("[PAWN_nameDef]", "This pawn").replace("[PAWN_pronoun]", "This pawn").replace("[PAWN_possessive]", "their").replace("[PAWN_objective]", "them"),
+        return text.replace("\\n", "\n").replace("\n\n", "\n").replace("[PAWN_nameDef]", "This pawn").replace("[PAWN_pronoun]", "This pawn").replace("[PAWN_possessive]", "their").replace("[PAWN_objective]", "them")
 
     def __init__(self, bdef: ET.Element):
         # Handles parsing of a <BackstoryDef> element
@@ -82,13 +82,18 @@ for filePath in files:
             adulthoods.append(b.export())
         elif b.slot == "Childhood":
             childhoods.append(b.export())
+
+adulthoods.sort(key=lambda x: x["title"])
+childhoods.sort(key=lambda x: x["title"])
+
 adulthoodsFileTS = open(Path("./data/adulthoods.ts").resolve(), "w+")
 childhoodsFileTS = open(Path("./data/childhoods.ts").resolve(), "w+")
 adulthoodsFileJS = open(Path("./page/adulthoods.js").resolve(), "w+")
 childhoodsFileJS = open(Path("./page/childhoods.js").resolve(), "w+")
-adulthoodsFileTS.write(f"export var adulthoods = {json.dumps(adulthoods)};")
-childhoodsFileTS.write(f"export var childhoods = {json.dumps(childhoods)};")
-adulthoodsFileJS.write(
-    "/** @type { Backstory[] } */\n" + f"var adulthoods = {json.dumps(adulthoods)};")
-childhoodsFileJS.write(
-    "/** @type { Backstory[] } */\n" + f"var childhoods = {json.dumps(childhoods)};")
+jsonString = json.dumps(adulthoods, separators=(',', ':'))
+adulthoodsFileTS.write(f"export var adulthoods = {jsonString};")
+childhoodsFileTS.write(f"export var childhoods = {jsonString};")
+adulthoodsFileJS.write("/** @type { Backstory[] } */\n" +
+                       f"var adulthoods = {jsonString};")
+childhoodsFileJS.write("/** @type { Backstory[] } */\n" +
+                       f"var childhoods = {jsonString};")
