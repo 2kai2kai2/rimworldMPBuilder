@@ -15,7 +15,7 @@ files = list(filter(lambda x: x.name not in exclude,
 class backstory:
     @staticmethod
     def cleanDescription(text: str) -> str:
-        return text.replace("\\n", "\n").replace("[PAWN_nameDef]", "This pawn").replace("[PAWN_pronoun]", "This pawn").replace("[PAWN_possessive]", "their"),
+        return text.replace("\\n", "\n").replace("\n\n", "\n").replace("[PAWN_nameDef]", "This pawn").replace("[PAWN_pronoun]", "This pawn").replace("[PAWN_possessive]", "their").replace("[PAWN_objective]", "them"),
 
     def __init__(self, bdef: ET.Element):
         # Handles parsing of a <BackstoryDef> element
@@ -38,8 +38,8 @@ class backstory:
             self.disabledWork.append(li.text)
         disabledWorkText = bdef.findtext("workDisables")
         if disabledWorkText is not None and disabledWorkText.strip() != "None":
-            self.disabledWork.extend(
-                map(lambda x: x.strip(), disabledWorkText.split(",")))
+            self.disabledWork.extend(filter(lambda x: x != "", map(
+                lambda x: x.strip(), disabledWorkText.split(","))))
 
         self.requiredWork: List[str] = []
         # Two ways it could be formatted: xml list or simple "a, b, c"/"None"
@@ -48,8 +48,8 @@ class backstory:
             self.requiredWork.append(li.text)
         requiredWorkText = bdef.findtext("requiredWorkTags")
         if requiredWorkText is not None and requiredWorkText.strip() != "None":
-            self.requiredWork.extend(
-                map(lambda x: x.strip(), requiredWorkText.split(",")))
+            self.requiredWork.extend(filter(lambda x: x != "", map(
+                lambda x: x.strip(), requiredWorkText.split(","))))
 
         self.forcedTraits: Dict[str, int] = {}
         for item in bdef.iterfind("./forcedTraits/*"):
@@ -82,6 +82,13 @@ for filePath in files:
             adulthoods.append(b.export())
         elif b.slot == "Childhood":
             childhoods.append(b.export())
-
-json.dump(adulthoods, open(Path("./data/adulthoods.json").resolve(), "w+"))
-json.dump(childhoods, open(Path("./data/childhoods.json").resolve(), "w+"))
+adulthoodsFileTS = open(Path("./data/adulthoods.ts").resolve(), "w+")
+childhoodsFileTS = open(Path("./data/childhoods.ts").resolve(), "w+")
+adulthoodsFileJS = open(Path("./page/adulthoods.js").resolve(), "w+")
+childhoodsFileJS = open(Path("./page/childhoods.js").resolve(), "w+")
+adulthoodsFileTS.write(f"export var adulthoods = {json.dumps(adulthoods)};")
+childhoodsFileTS.write(f"export var childhoods = {json.dumps(childhoods)};")
+adulthoodsFileJS.write(
+    "/** @type { Backstory[] } */\n" + f"var adulthoods = {json.dumps(adulthoods)};")
+childhoodsFileJS.write(
+    "/** @type { Backstory[] } */\n" + f"var childhoods = {json.dumps(childhoods)};")
