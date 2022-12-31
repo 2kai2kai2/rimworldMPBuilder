@@ -466,9 +466,41 @@ addEventListener("DOMContentLoaded", async (event) => {
     });
 
     submitButton.addEventListener("click", async (ev) => {
-        // verify
-        // send it in
+        // verify?
         pawn.save();
+        if (token === null) {
+            let r = await fetch("http://localhost:8787", {
+                method: "POST",
+                headers: { "gameID": gameID },
+                body: window.localStorage.getItem(`${gameID}:PAWN`)
+            });
+            if (r.ok) {
+                /** @type {ResponseJSON_POST_Game} */
+                let rbody = await r.json();
+                if (rbody.gameID !== gameID)
+                    throw new Error("Recieved response with invalid gameID: " + rbody.gameID);
+                token = rbody.token;
+                localStorage.setItem(`${gameID}:TOKEN`, token)
+                alert("Saved!");
+            } else {
+                /** @type {ResponseJSON_Error} */
+                let rbody = await r.json();
+                alert("Could not save to server: " + rbody.error);
+            }
+        } else {
+            let r = await fetch("http://localhost:8787", {
+                method: "PUT",
+                headers: { "gameID": gameID, "token": token },
+                body: window.localStorage.getItem(`${gameID}:PAWN`)
+            });
+            if (r.ok) {
+                alert("Saved!");
+            } else {
+                /** @type {ResponseJSON_Error} */
+                let rbody = await r.json();
+                alert("Could not save to server: " + rbody.error);
+            }
+        }
     });
 
     pageCoverDiv.hidden = true;

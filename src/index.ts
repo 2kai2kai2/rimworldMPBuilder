@@ -180,7 +180,7 @@ async function handlePUT(env: Env, request: Request): Promise<Response> {
     } catch {
         return errResponse("Could not find the pawn to modify.", 404);
     }
-    return jsonResponse({}, 204);
+    return jsonResponse(null, 204);
 }
 
 async function handleDELETE(env: Env, request: Request): Promise<Response> {
@@ -194,14 +194,14 @@ async function handleDELETE(env: Env, request: Request): Promise<Response> {
         } catch {
             return errResponse("Could not find the pawn to delete.", 404);
         }
-        return jsonResponse({}, 204);
+        return jsonResponse(null, 204);
     } else {
         try {
             await deleteGame(env, gameID)
         } catch {
             return errResponse("Could not find the game to delete.", 404);
         }
-        return jsonResponse({}, 204);
+        return jsonResponse(null, 204);
     }
 }
 
@@ -226,6 +226,7 @@ export default {
                         "Access-Control-Allow-Origin": "*",
                         "Content-Type": "application/json",
                         "Allow": "GET, POST, PUT, DELETE, OPTIONS",
+                        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
                         "Access-Control-Allow-Headers": "gameID, token, Content-Type"
                     }
                 });

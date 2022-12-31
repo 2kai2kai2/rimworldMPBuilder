@@ -119,23 +119,7 @@
  */
 
 // PUT Responses (note there is currently no rule editing)
-/**
- * Response when modifying a pawn
- * Should only be used for an ok (200-299) response
- * (body empty)
- * @typedef {Object} ResponseJSON_PUT_Pawn
- */
+// Does not return a body
 
 // DELETE Responses
-/**
- * Response when deleting a game
- * Should only be used for an ok (200-299) response
- * (body empty)
- * @typedef {Object} ResponseJSON_DELETE_Game
- */
-/**
- * Response when deleting a pawn
- * Should only be used for an ok (200-299) response
- * (body empty)
- * @typedef {Object} ResponseJSON_DELETE_Pawn
- */
+// Does not return a body
