@@ -14,8 +14,8 @@ GET: header {
 RESPONSE: {
     "gameID": "(id)",
     "token": "(token)"
-} body: <pawn JSON object>
-
+    "pawn": <pawn JSON object>
+}
 // This one should receive back the pawn that was last saved. typically, we want to cache this in cookies.
 
 POST: body: <rules JSON object>

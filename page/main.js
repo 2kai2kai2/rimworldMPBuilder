@@ -1,61 +1,5 @@
 const params = new URLSearchParams(window.location.search)
 
-/**
- * @typedef {Object} Backstory
- * @property {string} name
- * @property {string} title
- * @property {string} titleShort
- * @property {string} desc
- * @property {Object.<string, number>} skills
- * @property {string[]} disabledWork
- * @property {string[]} requiredWork
- * @property {Object.<string, number>} traits
- */
-
-/**
- * @typedef {Object} Gene
- * @property {string} name
- * @property {string} label
- * @property {string} [labelShortAdj]
- * @property {string} [iconpath]
- * @property {string} [iconColor]
- * @property {string} [displayCategory]
- * @property {number} [displayOrder]
- * @property {number} [metabolism]
- * @property {Object.<string, number>} [skills]
- * @property {string[]} [abilities]
- * @property {Object.<string, number>} [traits]
- * @property {Object.<string, number>} [statOffsets]
- * @property {Object.<string, number>} [statFactors]
- * @property {Object.<string, number>} [damageFactors]
- * @property {string[]} [disabledWork]
- */
-
-/**
- * @typedef {Object} TraitDegree
- * @property {string} label
- * @property {string} desc
- * @property {number} degree
- * @property {Object.<string, number>} [skills]
- * @property {Object.<string, number>} [statOffsets]
- * @property {Object.<string, number>} [statFactors]
- * @property {string[]} [meditationTypes]
- * @property {number} [hungerRateFactor]
- */
-
-/**
- * @typedef {Object} Trait
- * @property {string} name
- * @property {number} commonality
- * @property {string[]} conflictingTraits
- * @property {string[]} exclusionTags
- * @property {string[]} forcedFlames
- * @property {string[]} conflictingFlames
- * @property {string[]} disabledWork
- * @property {string[]} requiredWork
- * @property {Object.<string, TraitDegree>} degrees
- */
-
 
 class Ruleset {
     minMetabolism = Number.NEGATIVE_INFINITY;
@@ -67,13 +11,13 @@ class Ruleset {
 
     /**
      * @param {Pawn} pawn 
-     * @returns {string} error or "" if ok
+     * @returns {string} error or `""` if ok
      */
-    verify = (pawn) => {
+    verify(pawn) {
         // TODO: check metabolism and complexity
         // Check for banned genes
         for (const gene of this.bannedGenes) {
-            if (pawn.genotype.hasGene())
+            if (pawn.genotype.hasGene(gene))
                 return "Has banned gene: " + gene;
         }
         // TODO: check traits (deal with spectrums)
@@ -83,6 +27,10 @@ class Ruleset {
         if (pawn.skills.totalFlames() > this.maxFlames)
             return "Too many skill flames (max " + this.maxFlames.toString() + ")";
         return "";
+    }
+
+    constructor(obj = {}) {
+        Object.assign(this, obj)
     }
 }
 
@@ -125,6 +73,13 @@ class RGBA {
         else
             throw new Error("Invalid color hex string");
     }
+    /**
+     * @param {{R: number, G: number, B: number, A?: number}} obj 
+     * @returns {RGBA}
+     */
+    static fromJSON(obj) {
+        return new RGBA(obj.R, obj.G, obj.B, "A" in obj ? obj.A : 1);
+    }
 }
 
 class Genotype {
@@ -138,6 +93,10 @@ class Genotype {
      */
     hasGene(gene) {
         return this.endogenes.includes(gene) || this.xenogenes.includes(gene);
+    }
+
+    constructor(obj = {}) {
+        Object.assign(this, obj)
     }
 }
 
@@ -176,6 +135,10 @@ class Skills {
         return this.ShootingFlames + this.MeleeFlames + this.Construction + this.MiningFlames + this.CookingFlames + this.PlantsFlames +
             this.AnimalsFlames + this.CraftingFlames + this.ArtisticFlames + this.MedicineFlames + this.SocialFlames + this.IntellectualFlames;
     }
+
+    constructor(obj = {}) {
+        Object.assign(this, obj)
+    }
 }
 
 class Pawn {
@@ -208,11 +171,40 @@ class Pawn {
     // apparel default
     // ideology placeholder
 
+    /**
+     * Saves the pawn JSON to `window.localStorage` as `{gameID}:PAWN`
+     */
     save() {
-        window.localStorage.setItem(`${gameID}:PAWN`, JSON.stringify(this));
+        window.localStorage.setItem(`${gameID}:PAWN`, JSON.stringify(pawn));
+    }
+
+    static fromJSON(obj = {}) {
+        let p = new Pawn();
+        p.id = obj.id;
+        p.firstName = obj.firstName;
+        p.nickName = obj.nickName;
+        p.lastName = obj.lastName;
+        p.tickAgeBio = obj.tickAgeBio;
+        p.tickAgeChron = obj.tickAgeChron;
+        p.childhood = obj.childhood;
+        p.adulthood = obj.adulthood;
+        p.gender = obj.gender;
+        p.bodyType = obj.bodyType;
+        p.headType = obj.headType;
+        p.hair = obj.hair;
+        p.hairColor = new RGBA(obj.hairColor);
+        p.beard = obj.beard;
+        p.faceTattoo = obj.faceTattoo;
+        p.bodyTattoo = obj.bodyTattoo;
+        p.skinColor = new RGBA(obj.skinColor);
+        p.melanin = obj.melanin;
+        p.favoriteColor = new RGBA(obj.favoriteColor);
+        p.genotype = new Genotype(obj.genotype);
+        p.skills = new Skills(obj.skills);
+        p.traits = obj.traits;
+        return p;
     }
 }
-
 /**
  * Adds `<option>` elements to the select for each backstory
  * @param {HTMLSelectElement} select 
@@ -323,13 +315,13 @@ addEventListener("DOMContentLoaded", async (event) => {
         alert("Invalid game parameter. Maybe it has ended?");
         return;
     }
-    ruleset = (await r.json()).rules;
+    ruleset = new Ruleset((await r.json()).rules);
 
-    // if cooki, load
+    // if stored, load
     token = window.localStorage.getItem(`${gameID}:TOKEN`);
     pawn = window.localStorage.getItem(`${gameID}:PAWN`);
     if (pawn !== null)
-        pawn = JSON.parse(pawn);
+        pawn = Pawn.fromJSON(JSON.parse(pawn));
     // hopefully we have both or none of these keys. if not that's bad. Maybe they should be bundled. idk.
     // for now assume we don't have to ask the server for the last uploaded pawn. TODO: error check this
 
@@ -475,8 +467,8 @@ addEventListener("DOMContentLoaded", async (event) => {
 
     submitButton.addEventListener("click", async (ev) => {
         // verify
-        Pawn.prototype.save.call(pawn);
         // send it in
+        pawn.save();
     });
 
     pageCoverDiv.hidden = true;
