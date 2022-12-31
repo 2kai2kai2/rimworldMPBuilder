@@ -31,6 +31,31 @@ const params = new URLSearchParams(window.location.search)
  * @property {string[]} [disabledWork]
  */
 
+/**
+ * @typedef {Object} TraitDegree
+ * @property {string} label
+ * @property {string} desc
+ * @property {number} degree
+ * @property {Object.<string, number>} [skills]
+ * @property {Object.<string, number>} [statOffsets]
+ * @property {Object.<string, number>} [statFactors]
+ * @property {string[]} [meditationTypes]
+ * @property {number} [hungerRateFactor]
+ */
+
+/**
+ * @typedef {Object} Trait
+ * @property {string} name
+ * @property {number} commonality
+ * @property {string[]} conflictingTraits
+ * @property {string[]} exclusionTags
+ * @property {string[]} forcedFlames
+ * @property {string[]} conflictingFlames
+ * @property {string[]} disabledWork
+ * @property {string[]} requiredWork
+ * @property {Object.<string, TraitDegree>} degrees
+ */
+
 const cookieExpiration = new Date(2100, 0).toUTCString();
 
 /**
