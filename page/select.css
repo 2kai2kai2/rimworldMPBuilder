@@ -1,0 +1,11 @@
+.tooltip {
+    background-color: #242526;
+    border-color: #636D7B;
+    border-width: 1px;
+    border-style: solid;
+}
+
+.tooltipContent {
+    background-color: #242526;
+    color: #E6E6E6;
+}

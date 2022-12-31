@@ -1,0 +1,59 @@
+body {
+    background-color: #2A2B2C;
+    color: #E6E6E6;
+}
+
+h3 {
+    margin-top: 0;
+}
+
+input[type="text"] {
+    background-color: #131616;
+    color: #E6E6E6;
+    border-color: #E6E6E6;
+    border-radius: 0.5em;
+    border-style: solid;
+    border-width: 0.5px;
+    padding: 0.4em;
+}
+
+input[type="color"] {
+    border: none;
+    padding: 0;
+    height: 2em;
+    width: 2em;
+}
+
+div.minorDiv {
+    background-color: #242526;
+    margin: 1em;
+    padding: 1em;
+}
+/* MainDiv -> middle column specific */
+div.ageDiv {
+    margin: 0.5em;
+}
+input.ageInput {
+    width: 6em;
+    float: right;
+    margin-left: 2em;
+}
+
+div.backstorySubDiv {
+    margin: 0.5em;
+}
+select.backstorySelect {
+    float: right;
+    margin-left: 2em;
+}
+
+/* MainDiv -> right column specific */
+div.skillDiv {
+    margin: 0.5em;
+}
+
+input.skillInput {
+    width: 4em;
+    float: right;
+    margin-left: 2em;
+}
