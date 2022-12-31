@@ -207,6 +207,15 @@ export default {
                 return await handlePUT(env, request);
             case "DELETE":
                 return await handleDELETE(env, request);
+            case "OPTIONS":
+                return new Response(null, {
+                    status: 204, headers: {
+                        "Access-Control-Allow-Origin": "*",
+                        "Content-Type": "application/json",
+                        "Allow": "GET, POST, PUT, DELETE, OPTIONS",
+                        "Access-Control-Allow-Headers": "gameID, token, Content-Type"
+                    }
+                });
             default:
                 return new Response(JSON.stringify({ error: "Invalid Method" }), { status: 405 });
         }
