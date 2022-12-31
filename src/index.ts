@@ -21,6 +21,10 @@ export interface Env {
     // MY_BUCKET: R2Bucket;
 }
 
+function generateID(): string {
+    return Math.floor(Math.random() * Math.pow(16, 8)).toString(16).padStart(8, "0") + Math.floor(Math.random() * Math.pow(16, 8)).toString(16).padStart(8, "0");
+}
+
 async function gameExists(env: Env, gameID: string): Promise<boolean> {
     if (gameID.includes(":"))
         return false;
@@ -28,7 +32,10 @@ async function gameExists(env: Env, gameID: string): Promise<boolean> {
 }
 
 async function createGame(env: Env, rules: Ruleset): Promise<string> {
-    let gameID = "TODO- MAKE THIS PICK A GOOD gameID" + Math.random().toString();
+    let gameID: string;
+    do {
+        gameID = generateID()
+    } while ((await env.KV.get(gameID)) !== null);
     await env.KV.put(gameID, JSON.stringify(rules));
     return gameID;
 }
@@ -61,7 +68,10 @@ async function getPawn(env: Env, gameID: string, token: string): Promise<Pawn> {
 async function addPawn(env: Env, gameID: string, pawn: Pawn): Promise<string> {
     if (!await gameExists(env, gameID))
         throw new Error("Invalid gameID passed.");
-    let token: string = "TODO-make realtokens" + Math.random().toString();
+    let token: string;
+    do {
+        token = generateID();
+    } while ((await env.KV.get(gameID + ":" + token)) !== null);
     await env.KV.put(gameID + ":" + token, JSON.stringify(pawn));
     return token;
 }
