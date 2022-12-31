@@ -94,33 +94,43 @@ async function deletePawn(env: Env, gameID: string, token: string) {
 }
 
 
-
-function errJSON(err: string): any {
-    return JSON.stringify({ error: err })
+function jsonResponse(json: any | null, _status: number): Response {
+    if (json !== null)
+        json = JSON.stringify(json);
+    return new Response(json, {
+        status: _status, headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Content-Type": "application/json"
+        }
+    });
 }
+function errResponse(err: string, _status: number = 400): Response {
+    return jsonResponse({ error: err }, _status);
+}
+
 
 async function handleGET(env: Env, request: Request): Promise<Response> {
     let gameID: string | null = request.headers.get("gameID");
     if (gameID === null)
-        return new Response(errJSON("oops!"), { status: 400 });
-    
+        return errResponse("oops!");
+
     let token: string | null = request.headers.get("token");
     if (token !== null) { // send last saved pawn
         let pawn: Pawn;
         try {
             pawn = await getPawn(env, gameID, token);
         } catch (error) {
-            return new Response(errJSON("Unable to find pawn with specified gameID and token."), { status: 404 });
+            return errResponse("Unable to find pawn with specified gameID and token.", 404);
         }
-        return new Response(JSON.stringify({ "gameID": request.headers.get("gameID"), "token": token, "pawn": pawn }), { status: 200 })
+        return jsonResponse({ "gameID": request.headers.get("gameID"), "token": token, "pawn": pawn }, 200);
     } else { // send rules
         let rules: Ruleset;
         try {
             rules = await getRules(env, gameID);
         } catch (error) {
-            return new Response(errJSON("Unable to find game with specified gameID."), { status: 404 });
+            return errResponse("Unable to find game with specified gameID.", 404);
         }
-        return new Response(JSON.stringify({ "gameID": gameID, "rules": rules }), { status: 200 })
+        return jsonResponse({ "gameID": gameID, "rules": rules }, 200);
     }
 }
 
@@ -129,66 +139,66 @@ async function handlePOST(env: Env, request: Request): Promise<Response> {
     try {
         json = await request.json()
     } catch (error) {
-        return new Response(errJSON("Unable to parse JSON body."), { status: 400 });
+        return errResponse("Unable to parse JSON body.");
     }
     let gameID: string | null = request.headers.get("gameID");
     if (gameID === null) {
         // TODO: Verify rules are not malformed
         gameID = await createGame(env, json)
-        return new Response(JSON.stringify({ "gameID": gameID }), { status: 201 });
+        return jsonResponse({ "gameID": gameID }, 201);
     }
 
     let _token: string;
     try {
         _token = await addPawn(env, gameID, json);
     } catch {
-        return new Response(errJSON("Unable to find game with specified gameID."), { status: 404 });
+        return errResponse("Unable to find game with specified gameID.", 404);
     }
-    return new Response(JSON.stringify({ gameID: gameID, token: _token}), { status: 201 });
+    return jsonResponse({ gameID: gameID, token: _token }, 201);
 }
 
 async function handlePUT(env: Env, request: Request): Promise<Response> {
     let gameID: string | null = request.headers.get("gameID");
     if (gameID === null)
-        return new Response(errJSON("No gameID provided."), {status: 400});
+        return errResponse("No gameID provided.");
     let token: string | null = request.headers.get("token");
     if (token === null)
-        return new Response(errJSON("No pawn token provided."), {status: 400});
+        return errResponse("No pawn token provided.", 400);
 
     let json: any;
     try {
         json = await request.json()
     } catch (error) {
-        return new Response(errJSON("Unable to parse JSON body."), { status: 400 });
+        return errResponse("Unable to parse JSON body.", 400);
     }
-    
+
     try {
         await setPawn(env, gameID, token, json);
     } catch {
-        return new Response(errJSON("Could not find the pawn to modify."), { status: 404 });
+        return errResponse("Could not find the pawn to modify.", 404);
     }
-    return new Response("{}", { status: 204 });
+    return jsonResponse({}, 204);
 }
 
 async function handleDELETE(env: Env, request: Request): Promise<Response> {
     let gameID: string | null = request.headers.get("gameID");
     if (gameID === null)
-        return new Response(errJSON("No gameID provided."), {status: 400});
+        return errResponse("No gameID provided.");
     let token: string | null = request.headers.get("token");
     if (token !== null) {
         try {
             await deletePawn(env, gameID, token);
         } catch {
-            return new Response(errJSON("Could not find the pawn to delete."), { status: 404 });
+            return errResponse("Could not find the pawn to delete.", 404);
         }
-        return new Response("{}", { status: 204 });
+        return jsonResponse({}, 204);
     } else {
         try {
             await deleteGame(env, gameID)
         } catch {
-            return new Response(errJSON("Could not find the game to delete."), { status: 404 });
+            return errResponse("Could not find the game to delete.", 404);
         }
-        return new Response("{}", { status: 204 });
+        return jsonResponse({}, 204);
     }
 }
 
