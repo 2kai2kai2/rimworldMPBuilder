@@ -56,23 +56,6 @@ const params = new URLSearchParams(window.location.search)
  * @property {Object.<string, TraitDegree>} degrees
  */
 
-const cookieExpiration = new Date(2100, 0).toUTCString();
-
-/**
- * @param {string} key 
- * 
- * @returns {string | null} value
- */
-function cookieCutter(key) {
-    let index = document.cookie.search("(?:^|;)\\s*" + key + "=");
-    if (index == -1)
-        return null;
-    index = document.cookie.indexOf("=", index) + 1;
-    let indexEnd = document.cookie.indexOf(";", index);
-    if (indexEnd == -1)
-        indexEnd = document.cookie.length;
-    return document.cookie.substring(index, indexEnd);
-}
 
 class Ruleset {
     minMetabolism = Number.NEGATIVE_INFINITY;
@@ -220,12 +203,13 @@ class Pawn {
 
     genotype = new Genotype();
     skills = new Skills()
-    traits = new Map(); //string, number
+    /** @type {Object.<string, number>} */
+    traits = new Object();
     // apparel default
     // ideology placeholder
 
-    saveCookie() {
-        document.cookie = `${gameID}:PAWN=${encodeURIComponent(JSON.stringify(this))};expires=${cookieExpiration};samesite=lax`;
+    save() {
+        window.localStorage.setItem(`${gameID}:PAWN`, JSON.stringify(this));
     }
 }
 
@@ -342,16 +326,11 @@ addEventListener("DOMContentLoaded", async (event) => {
     ruleset = (await r.json()).rules;
 
     // if cooki, load
-    token = cookieCutter(gameID + ":TOKEN");
-    pawn = (() => {
-        let str = cookieCutter(gameID + ":PAWN");
-        if (str === null)
-            return null;
-        console.log(decodeURIComponent(str));
-        return JSON.parse(decodeURIComponent(str));
-    })();
-    console.log(pawn);
-    // hopefully we have both or none of these cookies. if not that's bad. Maybe they should be bundled. idk.
+    token = window.localStorage.getItem(`${gameID}:TOKEN`);
+    pawn = window.localStorage.getItem(`${gameID}:PAWN`);
+    if (pawn !== null)
+        pawn = JSON.parse(pawn);
+    // hopefully we have both or none of these keys. if not that's bad. Maybe they should be bundled. idk.
     // for now assume we don't have to ask the server for the last uploaded pawn. TODO: error check this
 
     // If necessary, roll a new pawn
@@ -496,7 +475,7 @@ addEventListener("DOMContentLoaded", async (event) => {
 
     submitButton.addEventListener("click", async (ev) => {
         // verify
-        Pawn.prototype.saveCookie.call(pawn);
+        Pawn.prototype.save.call(pawn);
         // send it in
     });
 
