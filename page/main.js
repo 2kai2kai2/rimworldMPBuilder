@@ -43,6 +43,40 @@ function pickRandom(list) {
     return list[Math.floor(Math.random() * list.length)];
 }
 
+/**
+ * @template T
+ * @param {T[]} a 
+ * @param {T[]} b 
+ * @returns {bool}
+ */
+function anyMatch(a, b) {
+    for (const item of a) {
+        if (b.includes(item))
+            return true;
+    }
+    return false;
+}
+
+/**
+ * Adds a number, but as a string
+ * @param {string} text 
+ * @param {number} num
+ * @returns {string}
+ */
+function addStrInt(text, num) {
+    return (Number.parseInt(text) + num).toString()
+}
+
+/**
+ * parses a string of the format `"a,b, c,  d,e"` -> `["a", "b", "c", "d", "e"]` (whitespace is trimmed)
+ * @param {string} text 
+ * @param {string[]}
+ */
+function parseCommaList(text) {
+    let items = text.split(",");
+    return items.map((value) => value.trim()).filter((value) => value.length != 0);
+}
+
 class RGBA {
     R;
     G;
@@ -214,11 +248,11 @@ function buildBackstorySelect(select, backstoryList) {
     backstoryList.sort((a, b) => a.title.toLowerCase() < b.title.toLowerCase() ? -1 : 1);
     backstoryList.forEach((backstory, bs_index, bs_array) => {
         let desc = backstory.desc;
-        if (backstory.skills.size > 0) desc += `\n`;
+        if (backstory.skills.length > 0) desc += "\n";
         for (const skill in backstory.skills) {
             desc += `\n${skill}: ${backstory.skills[skill] < 0 ? "" : "+"}${backstory.skills[skill]}`
         };
-        if (backstory.disabledWork.size > 0) desc += `\n`;
+        if (backstory.disabledWork.length > 0) desc += "\n";
         backstory.disabledWork.forEach((value, index, array) => {
             desc += `\n${value} disabled`
         })
@@ -228,6 +262,117 @@ function buildBackstorySelect(select, backstoryList) {
         element.text = backstory.title;
         select.appendChild(element);
     });
+}
+
+/**
+ * Adds `<option>` elements to the dialog for each trait
+ * @param {HTMLDialogElement} dialog 
+ * @param {Trait[]} traitList 
+ */
+function buildTraitsDialog(dialog, traitList) {
+    /**
+     * @param {Trait} a 
+     * @param {HTMLInputElement} b 
+     * @returns {boolean}
+     */
+    function hasConflict(a, b) {
+        let b_exclusionTags = parseCommaList(b.getAttribute("exclusionTags"));
+        let b_conflictingTraits = parseCommaList(b.getAttribute("conflictingTraits"));
+        let b_name = b.value.substring(0, b.value.lastIndexOf(":"));
+        return anyMatch(a.exclusionTags, b_exclusionTags) ||
+            anyMatch(a.conflictingTraits, b_conflictingTraits) ||
+            b_conflictingTraits.includes(a.name) ||
+            a.conflictingTraits.includes(b_name) ||
+            a.name == b_name;
+    }
+    let scrollBox = document.getElementById("traitsScrollBox");
+    /** @type {Function[]} */
+    let postBuildCallbacks = [];
+    for (const trait of traitList) {
+        for (const degKey in trait.degrees) {
+            const degree = trait.degrees[degKey];
+            let desc = degree.desc;
+            if (degree.skills !== undefined && degree.skills.length > 0) {
+                desc += "\n";
+                for (const skill in degree.skills) {
+                    desc += `\n${skill}: ${degree.skills[skill] < 0 ? "" : "+"}${degree.skills[skill]}`
+                };
+            }
+            if (degree.meditationTypes !== undefined && degree.meditationTypes.length > 0) {
+                desc += "\n\nEnables meditation focus types:";
+                for (const value of degree.meditationTypes) {
+                    desc += `\n- ${value}`;
+                }
+            }
+            if (trait.disabledWork !== undefined && trait.disabledWork.length > 0) {
+                desc += "\n";
+                for (const value of trait.disabledWork) {
+                    desc += `\n${value} disabled`;
+                }
+            }
+            let div = document.createElement("div");
+            let label = document.createElement("label");
+            let check = document.createElement("input");
+            div.title = desc;
+
+            check.type = "checkbox";
+            check.value = `${trait.name}:${degKey}`;
+            check.id = `traitLabel${check.value}`
+            label.textContent = degree.label;
+            label.htmlFor = check.id;
+
+            check.setAttribute("exclusionTags", trait.exclusionTags.join(","));
+            check.setAttribute("conflictingTraits", trait.conflictingTraits.join(","));
+            check.setAttribute("conflicts", "0");
+
+            // Change event
+            function setConflicts() {
+                scrollBox.querySelectorAll("input").forEach((other) => {
+                    if (other.id === check.id)
+                        return;
+                    if (hasConflict(trait, other)) {
+                        other.disabled = true;
+                        let prevConflicts = other.getAttribute("conflicts");
+                        other.setAttribute("conflicts", addStrInt(prevConflicts, 1));
+                    }
+                });
+            }
+            function unsetConflicts() {
+                scrollBox.querySelectorAll("input").forEach((other) => {
+                    if (other.id === check.id)
+                        return;
+                    if (hasConflict(trait, other)) {
+                        let newConflictCount = addStrInt(other.getAttribute("conflicts"), -1);
+                        other.setAttribute("conflicts", newConflictCount);
+                        if (newConflictCount === "0")
+                            other.disabled = false;
+                    }
+                });
+            }
+            check.onchange = (ev) => {
+                if (check.checked) {
+                    setConflicts();
+                    pawn.traits[trait.name] = Number.parseInt(degKey);
+                } else {
+                    unsetConflicts();
+                    delete pawn.traits[trait.name];
+                }
+            }
+
+            // Check if the pawn has the trait
+            if (trait.name in pawn.traits && pawn.traits[trait.name].toString() == degKey) {
+                check.checked = true;
+                postBuildCallbacks.push(setConflicts);
+            }
+
+            scrollBox.append(div);
+            div.append(label);
+            div.append(check);
+        }
+    }
+    for (const callback of postBuildCallbacks) {
+        callback();
+    }
 }
 
 // Grab the elements
@@ -244,11 +389,15 @@ var favoriteColorPicker;
 /** @type {HTMLInputElement} */
 var maleRadioButton;
 /** @type {HTMLInputElement} */
+var submitButton;
+
+/** @type {HTMLInputElement} */
 var femaleRadioButton;
 /** @type {HTMLInputElement} */
 var skinColorPicker;
 /** @type {HTMLInputElement} */
 var hairColorPicker;
+
 /** @type {HTMLInputElement} */
 var bioAgeInput;
 /** @type {HTMLInputElement} */
@@ -257,8 +406,10 @@ var chronAgeInput;
 var childhoodSelect;
 /** @type {HTMLSelectElement} */
 var adulthoodSelect;
+/** @type {HTMLDialogElement} */
+var traitsDialog;
 /** @type {HTMLInputElement} */
-var submitButton;
+var openTraitsButton;
 
 /** @type {HTMLInputElement} */
 var shootingInput;
@@ -283,6 +434,44 @@ var medicineInput;
 /** @type {HTMLInputElement} */
 var intellectualInput;
 
+function loadHTMLElements() {
+    // Pawn->Top bar
+    firstNameInput = document.getElementById("firstNameInput");
+    nickNameInput = document.getElementById("nickNameInput");
+    lastNameInput = document.getElementById("lastNameInput");
+    favoriteColorPicker = document.getElementById("favoriteColor");
+    submitButton = document.getElementById("submitButton");
+    // Pawn->Main->Left
+    maleRadioButton = document.getElementById("maleRadioButton");
+    femaleRadioButton = document.getElementById("femaleRadioButton");
+    skinColorPicker = document.getElementById("skinColor");
+    hairColorPicker = document.getElementById("hairColor");
+    // Pawn->Main->Middle
+    bioAgeInput = document.getElementById("bioAgeInput");
+    chronAgeInput = document.getElementById("chronAgeInput");
+    adulthoodSelect = document.getElementById("adulthoodSelect");
+    childhoodSelect = document.getElementById("childhoodSelect");
+    traitsDialog = document.getElementById("traitsDialog");
+    openTraitsButton = document.getElementById("openTraitsButton");
+    // Pawn->Main->Left
+    shootingInput = document.getElementById("shootingInput");
+    meleeInput = document.getElementById("meleeInput");
+    constructionInput = document.getElementById("constructionInput");
+    miningInput = document.getElementById("miningInput");
+    cookingInput = document.getElementById("cookingInput");
+    plantsInput = document.getElementById("plantsInput");
+    animalsInput = document.getElementById("animalsInput");
+    craftingInput = document.getElementById("craftingInput");
+    artisticInput = document.getElementById("artisticInput");
+    medicineInput = document.getElementById("medicineInput");
+    intellectualInput = document.getElementById("intellectualInput");
+
+    // Genotype
+    // ...
+
+    // Other
+    pageCoverDiv = document.getElementById("pageCover")
+}
 
 // And the data thingies
 /** @type {Ruleset} */
@@ -302,8 +491,6 @@ var token;
 
 // Apply pawn data to page
 addEventListener("DOMContentLoaded", async (event) => {
-    pageCoverDiv = document.getElementById("pageCover")
-
     if (!params.has("g")) {
         alert("oh noews! yuwu nweed a pawameter!");
         return;
@@ -329,32 +516,8 @@ addEventListener("DOMContentLoaded", async (event) => {
     if (pawn === null)
         pawn = new Pawn();
 
-    firstNameInput = document.getElementById("firstNameInput");
-    nickNameInput = document.getElementById("nickNameInput");
-    lastNameInput = document.getElementById("lastNameInput");
-    favoriteColorPicker = document.getElementById("favoriteColor");
-    maleRadioButton = document.getElementById("maleRadioButton");
-    femaleRadioButton = document.getElementById("femaleRadioButton");
-    skinColorPicker = document.getElementById("skinColor");
-    hairColorPicker = document.getElementById("hairColor");
-    bioAgeInput = document.getElementById("bioAgeInput");
-    chronAgeInput = document.getElementById("chronAgeInput");
-    adulthoodSelect = document.getElementById("adulthoodSelect");
-    childhoodSelect = document.getElementById("childhoodSelect");
-    submitButton = document.getElementById("submitButton");
 
-    shootingInput = document.getElementById("shootingInput");
-    meleeInput = document.getElementById("meleeInput");
-    constructionInput = document.getElementById("constructionInput");
-    miningInput = document.getElementById("miningInput");
-    cookingInput = document.getElementById("cookingInput");
-    plantsInput = document.getElementById("plantsInput");
-    animalsInput = document.getElementById("animalsInput");
-    craftingInput = document.getElementById("craftingInput");
-    artisticInput = document.getElementById("artisticInput");
-    medicineInput = document.getElementById("medicineInput");
-    intellectualInput = document.getElementById("intellectualInput");
-
+    loadHTMLElements();
 
 
     firstNameInput.value = pawn.firstName;
@@ -373,6 +536,8 @@ addEventListener("DOMContentLoaded", async (event) => {
     buildBackstorySelect(childhoodSelect, childhoods);
     adulthoodSelect.value = pawn.adulthood;
     childhoodSelect.value = pawn.childhood;
+    buildTraitsDialog(traitsDialog, traits);
+    // set value
 
     shootingInput.value = pawn.skills.Shooting;
     meleeInput.value = pawn.skills.Melee;
@@ -410,6 +575,7 @@ addEventListener("DOMContentLoaded", async (event) => {
     hairColorPicker.addEventListener("input", (ev) => {
         pawn.hairColor = RGBA.fromHex(ev.target.value);
     });
+
     bioAgeInput.addEventListener("change", (ev) => {
         pawn.tickAgeBio = bioAgeInput.value * 3600000;
         if (pawn.tickAgeChron < pawn.tickAgeBio) {
@@ -429,6 +595,10 @@ addEventListener("DOMContentLoaded", async (event) => {
     });
     childhoodSelect.addEventListener("change", (ev) => {
         pawn.childhood = childhoodSelect.value;
+    });
+    openTraitsButton.addEventListener("click", (ev) => {
+        console.log(traitsDialog);
+        traitsDialog.show();
     });
 
     shootingInput.addEventListener("change", (ev) => {

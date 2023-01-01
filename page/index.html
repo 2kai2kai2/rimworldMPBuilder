@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <!--<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/smoothness/jquery-ui.css">-->
@@ -11,6 +11,7 @@
     <script src="./adulthoods.js"></script>
     <script src="./childhoods.js"></script>
     <script src="./genes.js"></script>
+    <script src="./traits.js"></script>
 
     <script src="./main.js"></script>
     <link href="./main.css" rel="stylesheet">
@@ -76,7 +77,16 @@
                     </div>
                 </div>
                 <div class="minorDiv" id="traitsDiv">
+                    <dialog id="traitsDialog">
+                        <form id="traitsForm" method="dialog">
+                            <div id="traitsScrollBox">
+                                <!-- Gets filled by JS -->
+                            </div>
+                            <button id="traitsDialogCloseButton" value="">Close</button>
+                        </form>
+                    </dialog>
                     <h3>Traits</h3>
+                    <input type="button" value="Traits" id="openTraitsButton">
                 </div>
             </div>
             <div style="display: inline-block;" id="mainLeftDiv">
@@ -144,9 +154,8 @@
         </div>
     </section>
     <div id="pageCover"
-        style="position:absolute; left:0; right:0; top:0; bottom:0; background-color:rgba(42, 43, 44, .7)">
-        <label
-            style="position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); font-size:10em; font-weight:bold">...</label>
+        style="position:fixed; left:0; right:0; top:0; bottom:0; background-color:rgba(42, 43, 44, .7)">
+        <label style="position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); font-size:10em; font-weight:bold">...</label>
     </div>
 </body>
 

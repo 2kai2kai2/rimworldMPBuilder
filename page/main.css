@@ -46,6 +46,34 @@ select.backstorySelect {
     float: right;
     margin-left: 2em;
 }
+/* Traits Dialog */
+dialog#traitsDialog {
+    position: fixed;
+    right: 30%;
+    left: 30%;
+    top: 10%;
+    bottom: 10%;
+    width: 40%;
+    height: 80%;
+    margin: 0;
+
+    background-color: #2A2B2C;
+    border-color:#E6E6E6;
+    color:#E6E6E6;
+}
+dialog#traitsDialog form#traitsForm {
+    height: 100%;
+    width: 100%;
+}
+dialog#traitsDialog div#traitsScrollBox {
+    height: calc(100% - 2em);
+    width: 100%;
+    overflow-y: scroll;
+}
+dialog#traitsDialog button#traitsDialogCloseButton {
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
 
 /* MainDiv -> right column specific */
 div.skillDiv {
