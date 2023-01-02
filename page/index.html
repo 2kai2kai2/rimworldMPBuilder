@@ -69,11 +69,13 @@
                     <h3>Backstory</h3>
                     <div id="childhoodDiv" class="backstorySubDiv">
                         <label for="childhoodSelect">Childhood</label>
-                        <select name="childhoodSelect" id="childhoodSelect" class="backstorySelect"><!-- Gets filled by JS --></select>
+                        <select name="childhoodSelect" id="childhoodSelect"
+                            class="backstorySelect"><!-- Gets filled by JS --></select>
                     </div>
                     <div id="adulthoodDiv" class="backstorySubDiv">
                         <label for="adulthoodSelect">Adulthood</label>
-                        <select name="adulthoodSelect" id="adulthoodSelect" class="backstorySelect"><!-- Gets filled by JS --></select>
+                        <select name="adulthoodSelect" id="adulthoodSelect"
+                            class="backstorySelect"><!-- Gets filled by JS --></select>
                     </div>
                 </div>
                 <div class="minorDiv" id="traitsDiv">
@@ -141,20 +143,21 @@
         </div>
     </section>
     <hr>
-    <section id="genotypeSection">
+    <section id="genotypeSection" style="overflow-anchor: none;">
         <h1>Genotype</h1>
-        <div id="selectedGenesDiv" class="minorDiv"><!-- Gets filled by JS --></div>
-        <div id="genesStatsDiv" class="minorDiv">
-            <label>Complexity: </label><strong id="complexityNum">0</strong>
-            <br>
-            <label>Metabolic Efficiency: </label><strong id="metabolismNum">+0</strong>
-            <br>
-            <label>This pawn will require </label><strong id="foodPercentage">100%</strong><label> as much food as an average pawn.</label>
+        <div id="geneHeaderDiv">
+            <div id="selectedGenesDiv" class="minorDiv"><!-- Gets filled by JS --></div>
+            <div id="genesStatsDiv" class="minorDiv">
+                <label>Complexity: </label><strong id="complexityNum">0</strong>
+                <br>
+                <label>Metabolic Efficiency: </label><strong id="metabolismNum">+0</strong>
+                <br>
+                <label>This pawn will require </label><strong id="foodPercentage">100%</strong><label> as much food as an average pawn.</label>
+            </div>
         </div>
         <div id="geneListDiv"><!-- Gets filled by JS --></div>
     </section>
-    <div id="pageCover"
-        style="position:fixed; left:0; right:0; top:0; bottom:0; background-color:rgba(42, 43, 44, .7)">
+    <div id="pageCover" style="position:fixed; left:0; right:0; top:0; bottom:0; background-color:rgba(42, 43, 44, .7)">
         <label style="position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); font-size:10em; font-weight:bold">...</label>
     </div>
 </body>

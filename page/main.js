@@ -121,6 +121,18 @@ function disabledWorkDesc(disabledWork) {
     }
     return out;
 }
+/**
+ * @param {Object.<string, number>} requiredTraits 
+ * @returns {string}
+ */
+function requiredTraitDesc(requiredTraits) {
+    let out = "";
+    for (const key in requiredTraits) {
+        let label = traits.find((value) => value.name == key).degrees[requiredTraits[key].toString()].label;
+        out += `\nForced trait: ${label}`
+    }
+    return out;
+}
 
 class RGBA {
     R;
@@ -462,8 +474,33 @@ function buildGenesList(geneList) {
         else
             catList.push(gene);
     }
+
+    // GFX
+    window.addEventListener("scroll", (ev) => {
+        let selectedRect = selectedGenesDiv.getBoundingClientRect();
+        if (selectedRect.top < 0) {
+            selectedGenesDiv.style = "margin: 0; padding-left: 2em; padding-right: 2em; padding-bottom: 0;";
+            genesStatsDiv.style = `padding-top: 0; margin: 0; padding-left: 2em; padding-right: 2em;`;
+        } else {
+            selectedGenesDiv.style = undefined;
+            genesStatsDiv.style = undefined;
+        }
+    });
+
+    /**
+     * @param {Gene} a 
+     * @param {HTMLInputElement} b 
+     * @returns {boolean}
+     */
+    function hasConflict(a, b) {
+        let b_exclusionTags = parseCommaList(b.getAttribute("exclusionTags") || "");
+        return anyMatch(a.exclusionTags || [], b_exclusionTags);
+    }
+
+    /** @type {Function[]} */
+    let postBuildCallbacks = [];
     categories.forEach((value, key, map) => {
-        value.sort((a, b) => (a.displayOrder || 9999) - (b.displayOrder || 9999));
+        value.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
 
         let categoryLabelDiv = document.createElement("div");
         categoryLabelDiv.id = `geneCategoryLabelDiv${key}`;
@@ -489,6 +526,8 @@ function buildGenesList(geneList) {
             if (gene.damageFactors)
                 desc += statFactorDesc(gene.damageFactors);
 
+            if (gene.traits)
+                desc += "\n" + requiredTraitDesc(gene.traits);
             if (gene.disabledWork)
                 desc += "\n" + disabledWorkDesc(gene.disabledWork);
 
@@ -501,39 +540,83 @@ function buildGenesList(geneList) {
             geneCheckbox.id = geneElement.htmlFor;
             geneCheckbox.hidden = true;
             geneCheckbox.value = gene.name;
-            geneCheckbox.type = "checkbox"
+            geneCheckbox.type = "checkbox";
+            geneCheckbox.setAttribute("conflicts", "0");
             geneCheckbox.setAttribute("exclusionTags", (gene.exclusionTags || []).join(","));
 
             categoryGenesDiv.append(geneElement, geneCheckbox);
 
+            function setConflicts() {
+                geneListDiv.querySelectorAll("input").forEach((other) => {
+                    if (other.id === geneCheckbox.id)
+                        return;
+                    if (hasConflict(gene, other)) {
+                        let prevConflicts = other.getAttribute("conflicts");
+                        other.setAttribute("conflicts", addStrInt(prevConflicts, 1));
+                        if (!other.disabled) {
+                            other.disabled = true;
+                            /** @type {HTMLLabelElement} */
+                            let otherLabel = geneListDiv.querySelector(`label[for="${other.id}"]`)
+                            otherLabel.style = "border-color:red;";
+                        }
+                    }
+                });
+            }
+            function unsetConflicts() {
+                geneListDiv.querySelectorAll("input").forEach((other) => {
+                    if (other.id === geneCheckbox.id)
+                        return;
+                    if (hasConflict(gene, other)) {
+                        let newConflictCount = addStrInt(other.getAttribute("conflicts"), -1);
+                        other.setAttribute("conflicts", newConflictCount);
+                        if (newConflictCount === "0") {
+                            other.disabled = false;
+                            /** @type {HTMLLabelElement} */
+                            let otherLabel = geneListDiv.querySelector(`label[for="${other.id}"]`)
+                            otherLabel.style = undefined;
+                        }
+                    }
+                });
+            }
+            function addSelected() {
+                let selectedGeneElement = document.createElement("label");
+                selectedGeneElement.htmlFor = geneElement.htmlFor;
+                selectedGeneElement.className = "geneSelectedItem";
+                selectedGeneElement.append(gene.label || gene.name);
+                selectedGeneElement.title = desc;
+                selectedGeneElement.style = "background-color: #242526;"
+                selectedGenesDiv.append(selectedGeneElement);
+            }
             geneCheckbox.onchange = (ev) => {
-                console.log("boop!");
                 if (geneCheckbox.checked) {
                     pawn.genotype.xenogenes.push(gene.name);
-                    // Add new label (linked to same checkbox) to selected
-                    let selectedGeneElement = document.createElement("label");
-                    selectedGeneElement.htmlFor = geneElement.htmlFor;
-                    selectedGeneElement.className = "geneSelectedItem";
-                    selectedGeneElement.append(gene.label || gene.name);
-                    selectedGeneElement.title = desc;
-                    selectedGenesDiv.append(selectedGeneElement);
+                    geneElement.style = "background-color: #242526;";
 
-                    // set conflicts
+                    addSelected();
+                    setConflicts();
                     updateGeneStats();
                 } else {
                     let index = pawn.genotype.xenogenes.indexOf(gene.name);
                     pawn.genotype.xenogenes.splice(index, 1);
+                    geneElement.style = undefined;
                     // Remove selected label
                     selectedGenesDiv.querySelector(`label.geneSelectedItem[for='${geneCheckbox.id}']`).remove();
-                    // unset conflicts
+
+                    unsetConflicts();
                     updateGeneStats();
                 }
+            }
+            if (pawn.genotype.hasGene(gene.name)) {
+                geneElement.style = "background-color: #242526;";
+                addSelected();
+                geneCheckbox.checked = true;
+                postBuildCallbacks.push(setConflicts);
             }
         }
         geneListDiv.append(categoryGenesDiv);
     });
-
-
+    for (const callback of postBuildCallbacks)
+        callback();
 }
 
 // Grab the elements
@@ -596,7 +679,11 @@ var medicineInput;
 var intellectualInput;
 
 /** @type {HTMLDivElement} */
+var geneHeaderDiv;
+/** @type {HTMLDivElement} */
 var selectedGenesDiv;
+/** @type {HTMLDivElement} */
+var genesStatsDiv;
 /** @type {HTMLElement} */
 var complexityElement;
 /** @type {HTMLElement} */
@@ -639,7 +726,9 @@ function loadHTMLElements() {
     intellectualInput = document.getElementById("intellectualInput");
 
     // Genotype
+    geneHeaderDiv = document.getElementById("geneHeaderDiv");
     selectedGenesDiv = document.getElementById("selectedGenesDiv");
+    genesStatsDiv = document.getElementById("genesStatsDiv");
     complexityElement = document.getElementById("complexityNum");
     metabolismElement = document.getElementById("metabolismNum");
     foodPercentElement = document.getElementById("foodPercentage");
