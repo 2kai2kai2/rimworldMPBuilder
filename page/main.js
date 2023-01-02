@@ -676,6 +676,8 @@ var artisticInput;
 /** @type {HTMLInputElement} */
 var medicineInput;
 /** @type {HTMLInputElement} */
+var socialInput;
+/** @type {HTMLInputElement} */
 var intellectualInput;
 
 /** @type {HTMLDivElement} */
@@ -723,6 +725,7 @@ function loadHTMLElements() {
     craftingInput = document.getElementById("craftingInput");
     artisticInput = document.getElementById("artisticInput");
     medicineInput = document.getElementById("medicineInput");
+    socialInput = document.getElementById("socialInput");
     intellectualInput = document.getElementById("intellectualInput");
 
     // Genotype
@@ -814,10 +817,10 @@ addEventListener("DOMContentLoaded", async (event) => {
     craftingInput.value = pawn.skills.Crafting;
     artisticInput.value = pawn.skills.Artistic;
     medicineInput.value = pawn.skills.Medicine;
+    socialInput.value = pawn.skills.Social;
     intellectualInput.value = pawn.skills.Intellectual;
 
     buildGenesList(genes);
-    // set value
 
     firstNameInput.addEventListener("input", (ev) => {
         pawn.firstName = ev.target.value;
@@ -869,39 +872,27 @@ addEventListener("DOMContentLoaded", async (event) => {
         traitsDialog.show();
     });
 
-    shootingInput.addEventListener("change", (ev) => {
-        pawn.skills.Shooting = ev.target.value;
-    });
-    meleeInput.addEventListener("change", (ev) => {
-        pawn.skills.Melee = ev.target.value;
-    });
-    constructionInput.addEventListener("change", (ev) => {
-        pawn.skills.Construction = ev.target.value;
-    });
-    miningInput.addEventListener("change", (ev) => {
-        pawn.skills.Mining = ev.target.value;
-    });
-    cookingInput.addEventListener("change", (ev) => {
-        pawn.skills.Cooking = ev.target.value;
-    });
-    plantsInput.addEventListener("change", (ev) => {
-        pawn.skills.Plants = ev.target.value;
-    });
-    animalsInput.addEventListener("change", (ev) => {
-        pawn.skills.Animals = ev.target.value;
-    });
-    craftingInput.addEventListener("change", (ev) => {
-        pawn.skills.Crafting = ev.target.value;
-    });
-    artisticInput.addEventListener("change", (ev) => {
-        pawn.skills.Artistic = ev.target.value;
-    });
-    medicineInput.addEventListener("change", (ev) => {
-        pawn.skills.Medicine = ev.target.value;
-    });
-    intellectualInput.addEventListener("change", (ev) => {
-        pawn.skills.Intellectual = ev.target.value;
-    });
+    /**
+     * @param {HTMLInputElement} input 
+     * @param {string} skill 
+     */
+    function addSkillChangeListener(input, skill) {
+        input.addEventListener("change", (ev) => {
+            pawn.skills[skill] = input.value;
+        });
+    }
+    addSkillChangeListener(shootingInput, "Shooting");
+    addSkillChangeListener(meleeInput, "Melee");
+    addSkillChangeListener(constructionInput, "Construction");
+    addSkillChangeListener(miningInput, "Mining");
+    addSkillChangeListener(cookingInput, "Cooking");
+    addSkillChangeListener(plantsInput, "Plants");
+    addSkillChangeListener(animalsInput, "Animals");
+    addSkillChangeListener(craftingInput, "Crafting");
+    addSkillChangeListener(artisticInput, "Artistic");
+    addSkillChangeListener(medicineInput, "Medicine");
+    addSkillChangeListener(socialInput, "Social");
+    addSkillChangeListener(intellectualInput, "Intellectual");
 
     submitButton.addEventListener("click", async (ev) => {
         // verify?
