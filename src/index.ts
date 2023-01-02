@@ -1,7 +1,8 @@
-import { RGBA, Genotype, Skills, Pawn, Ruleset } from "./structures";
+import { RGBA, Genotype, Skills, Pawn, Ruleset, pawnToXML } from "./structures";
 import { adulthoods } from "../data/adulthoods";
 import { childhoods } from "../data/childhoods";
 import { genes } from "../data/genes";
+import xml from "xml";
 
 /**
  * Welcome to Cloudflare Workers! This is your first worker.
