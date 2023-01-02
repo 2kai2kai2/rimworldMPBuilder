@@ -30,13 +30,16 @@
 /**
  * @typedef {Object} Gene
  * @property {string} name
- * @property {string} label
+ * @property {string} [label]
  * @property {string} [labelShortAdj]
- * @property {string} [iconpath]
+ * @property {string} [desc]
+ * @property {string} [iconPath]
  * @property {string} [iconColor]
  * @property {string} [displayCategory]
  * @property {number} [displayOrder]
  * @property {number} [metabolism]
+ * @property {number} [complexity]
+ * @property {string[]} [exclusionTags]
  * @property {Object.<string, number>} [skills]
  * @property {string[]} [abilities]
  * @property {Object.<string, number>} [traits]

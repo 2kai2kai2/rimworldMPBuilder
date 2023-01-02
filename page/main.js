@@ -77,6 +77,51 @@ function parseCommaList(text) {
     return items.map((value) => value.trim()).filter((value) => value.length != 0);
 }
 
+/**
+ * @param {Object.<string, number>} skills 
+ * @returns {string}
+ */
+function skillsDesc(skills) {
+    let out = "";
+    for (const skill in skills) {
+        out += `\n${skill}: ${skills[skill] < 0 ? "" : "+"}${skills[skill]}`;
+    }
+    return out
+}
+/**
+ * @param {Object.<string, number>} statOffsets 
+ * @returns {string}
+ */
+function statOffsetDesc(statOffsets) {
+    let out = "";
+    for (const stat in statOffsets) {
+        out += `\n${stat}: ${statOffsets[stat] < 0 ? "" : "+"}${statOffsets[stat]}`;
+    }
+    return out;
+}
+/**
+ * @param {Object.<string, number>} statFactors 
+ * @returns {string}
+ */
+function statFactorDesc(statFactors) {
+    let out = "";
+    for (const stat in statFactors) {
+        out += `\n${stat}: ${statFactors[stat] * 100}%`;
+    }
+    return out;
+}
+/**
+ * @param {string[]} disabledWork 
+ * @returns {string}
+ */
+function disabledWorkDesc(disabledWork) {
+    let out = "";
+    for (const value of disabledWork) {
+        out += `\n${value} disabled`;
+    }
+    return out;
+}
+
 class RGBA {
     R;
     G;
@@ -118,7 +163,9 @@ class RGBA {
 
 class Genotype {
     xenotype = "Baseliner";
+    /** @type {string[]} */
     endogenes = [];
+    /** @type {string[]} */
     xenogenes = [];
 
     /**
@@ -131,6 +178,21 @@ class Genotype {
 
     constructor(obj = {}) {
         Object.assign(this, obj)
+    }
+
+    stats() {
+        let out = { complexity: 0, metabolism: 0 };
+        for (const geneName of this.endogenes) {
+            let gene = genes.find((value) => value.name == geneName);
+            out.complexity += gene.complexity || 0;
+            out.metabolism += gene.metabolism || 0;
+        }
+        for (const geneName of this.xenogenes) {
+            let gene = genes.find((value) => value.name == geneName);
+            out.complexity += gene.complexity || 0;
+            out.metabolism += gene.metabolism || 0;
+        }
+        return out;
     }
 }
 
@@ -266,10 +328,9 @@ function buildBackstorySelect(select, backstoryList) {
 
 /**
  * Adds `<option>` elements to the dialog for each trait
- * @param {HTMLDialogElement} dialog 
  * @param {Trait[]} traitList 
  */
-function buildTraitsDialog(dialog, traitList) {
+function buildTraitsDialog(traitList) {
     /**
      * @param {Trait} a 
      * @param {HTMLInputElement} b 
@@ -375,6 +436,106 @@ function buildTraitsDialog(dialog, traitList) {
     }
 }
 
+/** 
+ * Updates genetic complexity and metabolism 
+ */
+function updateGeneStats() {
+    let stats = pawn.genotype.stats();
+    complexityElement.textContent = stats.complexity.toString();
+    metabolismElement.textContent = (stats.metabolism < 0 ? "" : "+") + stats.metabolism.toString();
+    // Metabolism can go lower, but food percent will never drop below 50% in game
+    let foodPercent = Math.max(100 + (stats.metabolism < 0 ? -25 * stats.metabolism : -10 * stats.metabolism), 50);
+    foodPercentElement.textContent = foodPercent.toString() + "%";
+}
+
+/**
+ * @param {Gene[]} geneList 
+ */
+function buildGenesList(geneList) {
+    /** @type {Map<string, Gene[]>} */
+    let categories = new Map();
+    for (const gene of geneList) {
+        let catName = gene.displayCategory || "Misc";
+        let catList = categories.get(catName);
+        if (catList === undefined)
+            categories.set(catName, [gene]);
+        else
+            catList.push(gene);
+    }
+    categories.forEach((value, key, map) => {
+        value.sort((a, b) => (a.displayOrder || 9999) - (b.displayOrder || 9999));
+
+        let categoryLabelDiv = document.createElement("div");
+        categoryLabelDiv.id = `geneCategoryLabelDiv${key}`;
+        let categoryLabel = document.createElement("label");
+        categoryLabel.id = `geneCategoryLabel${key}`;
+        categoryLabel.textContent = key;
+        categoryLabelDiv.append(categoryLabel);
+        geneListDiv.append(categoryLabelDiv);
+
+        let categoryGenesDiv = document.createElement("div");
+        categoryGenesDiv.id = `geneCategoryListDiv${key}`;
+        for (const gene of value) {
+            let desc = gene.desc || "";
+            if (gene.skills)
+                desc += "\n" + skillsDesc(gene.skills);
+
+            if (gene.statOffsets || gene.statFactors || gene.damageFactors)
+                desc += "\n";
+            if (gene.statOffsets)
+                desc += statOffsetDesc(gene.statOffsets);
+            if (gene.statFactors)
+                desc += statFactorDesc(gene.statFactors);
+            if (gene.damageFactors)
+                desc += statFactorDesc(gene.damageFactors);
+
+            if (gene.disabledWork)
+                desc += "\n" + disabledWorkDesc(gene.disabledWork);
+
+            let geneElement = document.createElement("label");
+            geneElement.htmlFor = `geneCheckbox${gene.name}`;
+            geneElement.className = "geneListItem";
+            geneElement.append(gene.label || gene.name);
+            geneElement.title = desc;
+            let geneCheckbox = document.createElement("input");
+            geneCheckbox.id = geneElement.htmlFor;
+            geneCheckbox.hidden = true;
+            geneCheckbox.value = gene.name;
+            geneCheckbox.type = "checkbox"
+            geneCheckbox.setAttribute("exclusionTags", (gene.exclusionTags || []).join(","));
+
+            categoryGenesDiv.append(geneElement, geneCheckbox);
+
+            geneCheckbox.onchange = (ev) => {
+                console.log("boop!");
+                if (geneCheckbox.checked) {
+                    pawn.genotype.xenogenes.push(gene.name);
+                    // Add new label (linked to same checkbox) to selected
+                    let selectedGeneElement = document.createElement("label");
+                    selectedGeneElement.htmlFor = geneElement.htmlFor;
+                    selectedGeneElement.className = "geneSelectedItem";
+                    selectedGeneElement.append(gene.label || gene.name);
+                    selectedGeneElement.title = desc;
+                    selectedGenesDiv.append(selectedGeneElement);
+
+                    // set conflicts
+                    updateGeneStats();
+                } else {
+                    let index = pawn.genotype.xenogenes.indexOf(gene.name);
+                    pawn.genotype.xenogenes.splice(index, 1);
+                    // Remove selected label
+                    selectedGenesDiv.querySelector(`label.geneSelectedItem[for='${geneCheckbox.id}']`).remove();
+                    // unset conflicts
+                    updateGeneStats();
+                }
+            }
+        }
+        geneListDiv.append(categoryGenesDiv);
+    });
+
+
+}
+
 // Grab the elements
 /** @type {HTMLDivElement} */
 var pageCoverDiv;
@@ -434,6 +595,17 @@ var medicineInput;
 /** @type {HTMLInputElement} */
 var intellectualInput;
 
+/** @type {HTMLDivElement} */
+var selectedGenesDiv;
+/** @type {HTMLElement} */
+var complexityElement;
+/** @type {HTMLElement} */
+var metabolismElement;
+/** @type {HTMLElement} */
+var foodPercentElement;
+/** @type {HTMLDivElement} */
+var geneListDiv;
+
 function loadHTMLElements() {
     // Pawn->Top bar
     firstNameInput = document.getElementById("firstNameInput");
@@ -467,7 +639,11 @@ function loadHTMLElements() {
     intellectualInput = document.getElementById("intellectualInput");
 
     // Genotype
-    // ...
+    selectedGenesDiv = document.getElementById("selectedGenesDiv");
+    complexityElement = document.getElementById("complexityNum");
+    metabolismElement = document.getElementById("metabolismNum");
+    foodPercentElement = document.getElementById("foodPercentage");
+    geneListDiv = document.getElementById("geneListDiv");
 
     // Other
     pageCoverDiv = document.getElementById("pageCover")
@@ -536,7 +712,7 @@ addEventListener("DOMContentLoaded", async (event) => {
     buildBackstorySelect(childhoodSelect, childhoods);
     adulthoodSelect.value = pawn.adulthood;
     childhoodSelect.value = pawn.childhood;
-    buildTraitsDialog(traitsDialog, traits);
+    buildTraitsDialog(traits);
     // set value
 
     shootingInput.value = pawn.skills.Shooting;
@@ -550,6 +726,9 @@ addEventListener("DOMContentLoaded", async (event) => {
     artisticInput.value = pawn.skills.Artistic;
     medicineInput.value = pawn.skills.Medicine;
     intellectualInput.value = pawn.skills.Intellectual;
+
+    buildGenesList(genes);
+    // set value
 
     firstNameInput.addEventListener("input", (ev) => {
         pawn.firstName = ev.target.value;

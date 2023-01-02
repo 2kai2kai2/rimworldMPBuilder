@@ -143,15 +143,15 @@
     <hr>
     <section id="genotypeSection">
         <h1>Genotype</h1>
-        <div>
-            currently used stuff
+        <div id="selectedGenesDiv" class="minorDiv"><!-- Gets filled by JS --></div>
+        <div id="genesStatsDiv" class="minorDiv">
+            <label>Complexity: </label><strong id="complexityNum">0</strong>
+            <br>
+            <label>Metabolic Efficiency: </label><strong id="metabolismNum">+0</strong>
+            <br>
+            <label>This pawn will require </label><strong id="foodPercentage">100%</strong><label> as much food as an average pawn.</label>
         </div>
-        <div>
-            metabolism and complexity
-        </div>
-        <div>
-            all the stuff
-        </div>
+        <div id="geneListDiv"><!-- Gets filled by JS --></div>
     </section>
     <div id="pageCover"
         style="position:fixed; left:0; right:0; top:0; bottom:0; background-color:rgba(42, 43, 44, .7)">

@@ -19,7 +19,7 @@ class gene:
         self.labelShortAdj = bdef.findtext("labelShortAdj")
         # This is only for some special effects
         self.geneClass = bdef.findtext("geneClass")
-        self.desc = bdef.findtext("description")
+        self.desc = bdef.findtext("description").replace("\\n", "\n")
         self.iconPath = bdef.findtext("iconPath")
         self.iconColor = bdef.findtext("iconColor")
         self.displayCategory = bdef.findtext("displayCategory")
@@ -141,7 +141,7 @@ for skill in skills:
             "displayOrder": order,
             "metabolism": aptitudeLevels[level][2],
             "complexity": aptitudeLevels[level][3],
-            "exclusionTags": f"Aptitude{skill}", # This is made-up for app purposes and does not use real game tags
+            "exclusionTags": [f"Aptitude{skill}"], # This is made-up for app purposes and does not use real game tags
             "skills": dict([(skill, aptitudeLevels[level][1])])
             # none of the rest (it only does skills)
         })
@@ -166,7 +166,7 @@ for drug in drugs:
             "displayOrder": order,
             "metabolism": drugLevels[level][3][0 if drugs[drug][1] else 1],
             "complexity": drugLevels[level][2],
-            "exclusionTags": f"Drug{drug}" # This is made-up for app purposes and does not use real game tags
+            "exclusionTags": [f"Drug{drug}"] # This is made-up for app purposes and does not use real game tags
             # some other stuff that's the actual effects
         })
         order += 1
