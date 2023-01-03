@@ -1,6 +1,6 @@
 # Reads genes from a directory and puts them into ../data/genes.json
 from pathlib import Path
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Literal
 from xml.etree import ElementTree as ET
 import json
 
@@ -10,6 +10,29 @@ exclude = []
 
 files = list(filter(lambda x: x.name not in exclude,
              Path(directory).rglob("*.[xX][mM][lL]")))
+
+
+def parseColor(text: str) -> Dict[Literal["R", "G", "B", "A"], Union[float, int]]:
+    assert text[0] == "(" and text[-1] == ")"
+    r, g, b = text[1:-1].split(",")
+    if "." in r:
+        r = int(float(r) * 255)
+    else:
+        r = int(r)
+    if "." in g:
+        g = int(float(g) * 255)
+    else:
+        g = int(g)
+    if "." in b:
+        b = int(float(b) * 255)
+    else:
+        b = int(b)
+    return {
+        "R": r,
+        "G": g,
+        "B": b,
+        "A": 1.0
+    }
 
 
 class gene:
@@ -22,6 +45,8 @@ class gene:
         self.desc = bdef.findtext("description").replace("\\n", "\n")
         self.iconPath = bdef.findtext("iconPath")
         self.iconColor = bdef.findtext("iconColor")
+        if self.iconColor is not None:
+            self.iconColor = parseColor(self.iconColor)
         self.displayCategory = bdef.findtext("displayCategory")
         self.displayOrder = bdef.findtext("displayOrderInCategory")
         self.displayOrder = 0 if self.displayOrder is None else int(
@@ -56,10 +81,23 @@ class gene:
             self.damageFactors[item.tag] = float(item.text)
         self.disabledWork = [
             x.text for x in bdef.iterfind("./disabledWorkTags/li")]
+        self.endogeneCategory = bdef.findtext("endogeneCategory")
+        self.skinColor = bdef.findtext("skinColorBase")
+        if self.skinColor is not None:
+            self.skinColor = parseColor(self.skinColor)
+        self.skinColorOverride = bdef.findtext("skinColorOverride")
+        if self.skinColorOverride is not None:
+            self.skinColorOverride = parseColor(self.skinColorOverride)
+        self.hairColor = bdef.findtext("hairColorOverride")
+        if self.hairColor is not None:
+            self.hairColor = parseColor(self.hairColor)
+        self.bodyType = bdef.findtext("bodyType")
+        self.melanin = bdef.findtext("minMelanin")
+        if self.melanin is not None:
+            self.melanin = float(self.melanin)
         # hairTagFilter (all hair)
         # beardTagFilter (all beards)
         # randomBrightnessFactor (cosmetic)
-        # skinColorOverride (all skin color)
         # forcedHeadTypes (e.g. GeneDefs_Cosmetic.xml -> Furskin)
         # missingGeneRomanceChanceFactor (e.g. GeneDefs_Cosmetic.xml -> Furskin)
         # graphicData (e.g. GeneDefs_Cosmetic.xml -> Furskin)
@@ -90,13 +128,19 @@ class gene:
             "metabolism": self.metabolism,
             "complexity": self.complexity,
             "exclusionTags": self.exclusionTags,
-            "skills": {}, # I think only aptitudes (below)
+            "skills": {},  # I think only aptitudes (below)
             "abilities": self.abilities,
             "traits": self.forcedTraits,
             "statOffsets": self.statOffsets,
             "statFactors": self.statFactors,
             "damageFactors": self.damageFactors,
-            "disabledWork": self.disabledWork
+            "disabledWork": self.disabledWork,
+            "endogeneCategory": self.endogeneCategory,
+            "skinColor": self.skinColor,
+            "skinColorOverride": self.skinColorOverride,
+            "hairColor": self.hairColor,
+            "bodyType": self.bodyType,
+            "melanin": self.melanin
         }
         to_remove: str = []
         for x in d:
@@ -126,47 +170,52 @@ for filePath in files:
 
 # Additional genes
 # Aptitudes (skills)
-skills = ["Shooting", "Melee", "Construction", "Mining", "Cooking", "Plants", "Animals", "Crafting", "Artistic", "Medicine", "Intelligence"]
-aptitudeLevels = {"AptitudeTerrible": ("Awful", -8, 1, 2), "AptitudePoor": ("Poor", -4, 1, 1), "AptitudeStrong": ("Strong", 4, 2, -1), "AptitudeRemarkable": ("Great", 8, 2, -3)}
+skills = ["Shooting", "Melee", "Construction", "Mining", "Cooking",
+          "Plants", "Animals", "Crafting", "Artistic", "Medicine", "Intelligence"]
+aptitudeLevels = {"AptitudeTerrible": ("Awful", -8, 1, 2), "AptitudePoor": (
+    "Poor", -4, 1, 1), "AptitudeStrong": ("Strong", 4, 2, -1), "AptitudeRemarkable": ("Great", 8, 2, -3)}
 order = 0
 for skill in skills:
     for level in aptitudeLevels:
         genes.append({
             "name": f"{level}_{skill}",
             "label": f"{aptitudeLevels[level][0]} {skill}",
-            #labelShortAdj
+            # labelShortAdj
             "desc": f"The carrier's aptitude in {skill} is {'reduced' if aptitudeLevels[level][1] < 0 else 'increased'} by {abs(aptitudeLevels[level][1])}. Aptitude acts like an offset on skill level.{' Additionally, all passion is removed from ' + skill + '.' if aptitudeLevels[level][1] < 0 else ''}",
-            "iconPath": f"UI/Icons/Genes/Gene_{level}_{skill}", # unchecked
+            "iconPath": f"UI/Icons/Genes/Gene_{level}_{skill}",  # unchecked
             "displayCategory": "Aptitudes",
             "displayOrder": order,
             "metabolism": aptitudeLevels[level][2],
             "complexity": aptitudeLevels[level][3],
-            "exclusionTags": [f"Aptitude{skill}"], # This is made-up for app purposes and does not use real game tags
+            # This is made-up for app purposes and does not use real game tags
+            "exclusionTags": [f"Aptitude{skill}"],
             "skills": dict([(skill, aptitudeLevels[level][1])])
             # none of the rest (it only does skills)
         })
         order += 1
 
 # Drugs
-drugs = {"Alcohol": ("Alcohol", True), "Smokeleaf": ("Smokeleaf", True), "Psychite": ("Psychite", False), "GoJuice": ("Go-juice", False), "WakeUp": ("Wake-up", False)}
+drugs = {"Alcohol": ("Alcohol", True), "Smokeleaf": ("Smokeleaf", True), "Psychite": (
+    "Psychite", False), "GoJuice": ("Go-juice", False), "WakeUp": ("Wake-up", False)}
 drugLevels = {"ChemicalDependency": ("dependency", lambda x: f"Carriers of this gene need to ingest {x.lower()} on a regular basis to survive. After 5 days without {x.lower()}, carriers will suffer from drug deficiency. After 30 days, they will fall into a coma. After 60 days, they will die.", 1, (3, 4)),
               "AddictionResistant": ("resistant", lambda x: f"Carriers are only half as likely to become addicted to {x}.", 1, (-1, -2)),
               "AddictionImmune": ("impervious", lambda x: f"Carriers of this gene never get addicted to {x}.", 2, (-3, -5))
-}
+              }
 order = 0
 for drug in drugs:
     for level in drugLevels:
         genes.append({
             "name": f"{level}_{drug}",
             "label": f"{drugs[drug][0]} {drugLevels[level][0]}",
-            #labelShortAdj
+            # labelShortAdj
             "desc": drugLevels[level][1](drugs[drug][0]),
-            "iconPath": f"UI/Icons/Genes/Gene_{level}_{drug}", # unchecked
+            "iconPath": f"UI/Icons/Genes/Gene_{level}_{drug}",  # unchecked
             "displayCategory": "Drugs",
             "displayOrder": order,
             "metabolism": drugLevels[level][3][0 if drugs[drug][1] else 1],
             "complexity": drugLevels[level][2],
-            "exclusionTags": [f"Drug{drug}"] # This is made-up for app purposes and does not use real game tags
+            # This is made-up for app purposes and does not use real game tags
+            "exclusionTags": [f"Drug{drug}"]
             # some other stuff that's the actual effects
         })
         order += 1

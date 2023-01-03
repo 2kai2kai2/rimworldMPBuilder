@@ -150,7 +150,7 @@ export function pawnToXML(pawn: Pawn): string {
             { traitNames: null },
             { traitDegrees: null },
             { skinColor: RGBAtoString(pawn.skinColor) },
-            // { melanin: pawn.melanin.toString() },
+            { melanin: pawn.melanin.toString() },
             { bodyType: pawn.bodyType },
             { headType: pawn.headType },
             { hairDef: pawn.hair },

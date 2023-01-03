@@ -188,6 +188,9 @@ class Genotype {
         return this.endogenes.includes(gene) || this.xenogenes.includes(gene);
     }
 
+    /**
+     * @param {{xenotype: string, endogenes: string[], xenogenes: string[]}} obj 
+     */
     constructor(obj = {}) {
         Object.assign(this, obj)
     }
@@ -261,23 +264,34 @@ class Pawn {
     adulthood = pickRandom(childhoods).name;
 
     gender = pickRandom(["Male", "Female"]);
-    bodyType = "Thin";
+    bodyType = "Standard";
     headType = "Gaunt";
-    hair = "Elisabeth";
+    hair = "Bald";
     hairColor = new RGBA();
     beard = "NoBeard";
     faceTattoo = "NoTattoo_Face";
     bodyTattoo = "NoTattoo_Body";
     skinColor = new RGBA();
-    melanin = 0.5;
+    melanin = 0;
     favoriteColor = new RGBA();
 
     genotype = new Genotype();
     skills = new Skills()
     /** @type {Object.<string, number>} */
-    traits = new Object();
+    traits = {};
     // apparel default
     // ideology placeholder
+
+    constructor(doInit = true) {
+        if (!doInit)
+            return;
+        let skinColorGene = pickRandom(genes.filter((gene) => "skinColor" in gene && "melanin" in gene));
+        this.skinColor = RGBA.fromJSON(skinColorGene.skinColor);
+        this.melanin = skinColorGene.melanin;
+        this.favoriteColor.R = Math.floor(Math.random() * 255);
+        this.favoriteColor.G = Math.floor(Math.random() * 255);
+        this.favoriteColor.B = Math.floor(Math.random() * 255);
+    }
 
     /**
      * Saves the pawn JSON to `window.localStorage` as `{gameID}:PAWN`
@@ -287,7 +301,7 @@ class Pawn {
     }
 
     static fromJSON(obj = {}) {
-        let p = new Pawn();
+        let p = new Pawn(false);
         p.id = obj.id;
         p.firstName = obj.firstName;
         p.nickName = obj.nickName;
@@ -300,13 +314,13 @@ class Pawn {
         p.bodyType = obj.bodyType;
         p.headType = obj.headType;
         p.hair = obj.hair;
-        p.hairColor = new RGBA(obj.hairColor);
+        p.hairColor = RGBA.fromJSON(obj.hairColor);
         p.beard = obj.beard;
         p.faceTattoo = obj.faceTattoo;
         p.bodyTattoo = obj.bodyTattoo;
-        p.skinColor = new RGBA(obj.skinColor);
+        p.skinColor = RGBA.fromJSON(obj.skinColor);
         p.melanin = obj.melanin;
-        p.favoriteColor = new RGBA(obj.favoriteColor);
+        p.favoriteColor = RGBA.fromJSON(obj.favoriteColor);
         p.genotype = new Genotype(obj.genotype);
         p.skills = new Skills(obj.skills);
         p.traits = obj.traits;
@@ -589,16 +603,56 @@ function buildGenesList(geneList) {
             }
             geneCheckbox.onchange = (ev) => {
                 if (geneCheckbox.checked) {
-                    pawn.genotype.xenogenes.push(gene.name);
+                    if ("endogeneCategory" in gene)
+                        pawn.genotype.endogenes.push(gene.name);
+                    else
+                        pawn.genotype.xenogenes.push(gene.name);
                     geneElement.style = "background-color: #242526;";
+                    if ("skinColor" in gene) {
+                        // Don't change skin color if there's already an override
+                        let hasOverride = pawn.genotype.xenogenes.some((value) => "skinColorOverride" in genes.find((g) => g.name == value));
+                        if (hasOverride) {
+                            pawn.skinColor = RGBA.fromJSON(gene.skinColor);
+                            skinColorPicker.value = pawn.skinColor.asHex();
+                        }
+                    }
+                    if ("skinColorOverride" in gene) {
+                        pawn.skinColor = RGBA.fromJSON(gene.skinColorOverride);
+                        skinColorPicker.value = pawn.skinColor.asHex();
+                        skinColorPicker.disabled = true; // If we have an override gene, no manual override
+                    }
+                    if ("melanin" in gene) {
+                        pawn.melanin = gene.melanin;
+                    }
+                    if ("hairColor" in gene) {
+                        pawn.hairColor = RGBA.fromJSON(gene.hairColor);
+                        hairColorPicker.value = pawn.hairColor.asHex();
+                    }
+                    if ("bodyType" in gene) {
+                        pawn.bodyType = gene.bodyType;
+                    }
 
                     addSelected();
                     setConflicts();
                     updateGeneStats();
                 } else {
-                    let index = pawn.genotype.xenogenes.indexOf(gene.name);
-                    pawn.genotype.xenogenes.splice(index, 1);
+                    if ("endogeneCategory" in gene) {
+                        let index = pawn.genotype.endogenes.indexOf(gene.name);
+                        pawn.genotype.endogenes.splice(index, 1);
+                    } else {
+                        let index = pawn.genotype.xenogenes.indexOf(gene.name);
+                        pawn.genotype.xenogenes.splice(index, 1);
+                    }
                     geneElement.style = undefined;
+                    if ("skinColorOverride" in gene) {
+                        hairColorPicker.disabled = false;
+                        // If we have a base skin color, set it back to that when disabling override
+                        let base = genes.find((value) => "skinColor" in value && pawn.genotype.endogenes.includes(value.name));
+                        if (base !== undefined) {
+                            pawn.skinColor = RGBA.fromJSON(base.skinColor);
+                            skinColorPicker.value = pawn.skinColor.asHex();
+                        }
+                    }
                     // Remove selected label
                     selectedGenesDiv.querySelector(`label.geneSelectedItem[for='${geneCheckbox.id}']`).remove();
 
@@ -795,9 +849,9 @@ addEventListener("DOMContentLoaded", async (event) => {
         maleRadioButton.checked = true;
     else
         femaleRadioButton.checked = true;
-    favoriteColorPicker.value = pawn.favoriteColor.asHex;
-    skinColorPicker.value = pawn.skinColor.asHex;
-    hairColorPicker.value = pawn.hairColor.asHex;
+    favoriteColorPicker.value = pawn.favoriteColor.asHex();
+    skinColorPicker.value = pawn.skinColor.asHex();
+    hairColorPicker.value = pawn.hairColor.asHex();
     bioAgeInput.value = Math.floor(pawn.tickAgeBio / 3600000);
     chronAgeInput.value = Math.floor(pawn.tickAgeChron / 3600000);
     buildBackstorySelect(adulthoodSelect, adulthoods);

@@ -34,7 +34,7 @@
  * @property {string} [labelShortAdj]
  * @property {string} [desc]
  * @property {string} [iconPath]
- * @property {string} [iconColor]
+ * @property {{R: number, G: number, B: number, A: number}} [iconColor]
  * @property {string} [displayCategory]
  * @property {number} [displayOrder]
  * @property {number} [metabolism]
@@ -47,6 +47,12 @@
  * @property {Object.<string, number>} [statFactors]
  * @property {Object.<string, number>} [damageFactors]
  * @property {string[]} [disabledWork]
+ * @property {string} [endogeneCategory]
+ * @property {{R: number, G: number, B: number, A: number}} [skinColor]
+ * @property {{R: number, G: number, B: number, A: number}} [skinColorOverride]
+ * @property {{R: number, G: number, B: number, A: number}} [hairColor]
+ * @property {string} [bodyType]
+ * @property {number} [melanin]
  */
 
 /**
