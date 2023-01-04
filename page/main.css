@@ -91,21 +91,27 @@ input.skillInput {
 div#geneHeaderDiv {
     position: sticky;
     top: -1.5em;
+    z-index: 100;
 }
 div#selectedGenesDiv {
     min-height: 10.25em;
 }
 
+div.geneCategoryLabelDiv {
+    margin-top: 3em;
+}
+
 label.geneListItem, label.geneSelectedItem {
     display:inline-block;
-    width: 7em;
-    height: 7em;
-    padding: 0.5em;
+    width: 128px;
+    height: 128px;
+    padding: 0;
     border-color:#E6E6E6;
     border-width: 2px;
     border-style: solid;
     background-color:#131616;
     margin: 1em;
+    margin-bottom: 2em;
     text-align: center;
     vertical-align:middle;
 

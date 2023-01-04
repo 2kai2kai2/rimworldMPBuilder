@@ -1,10 +1,19 @@
 # Reads genes from a directory and puts them into ../data/genes.json
 from pathlib import Path
-from typing import List, Dict, Union, Literal
+from typing import Any, List, Dict, Set, Union, Literal
 from xml.etree import ElementTree as ET
 import json
+from graphics import loadGraphics
+from sys import argv
 
-directory = input("Directory: ").strip('" \n\t')
+directory = ""
+graphicsDir = ""
+if len(argv) == 3:
+    directory = argv[1]
+    graphicsDir = argv[2]
+else:
+    directory = input("Directory: ").strip('" \n\t')
+    graphicsDir = input("Graphics Directory: ").strip('" \n\t')
 
 exclude = []
 
@@ -35,6 +44,9 @@ def parseColor(text: str) -> Dict[Literal["R", "G", "B", "A"], Union[float, int]
     }
 
 
+graphicsSearch: Set[str] = set()
+
+
 class gene:
     def __init__(self, bdef: ET.Element):
         self.defName = bdef.findtext("defName")
@@ -44,6 +56,8 @@ class gene:
         self.geneClass = bdef.findtext("geneClass")
         self.desc = bdef.findtext("description").replace("\\n", "\n")
         self.iconPath = bdef.findtext("iconPath")
+        if self.iconPath is not None:
+            graphicsSearch.add(self.iconPath)
         self.iconColor = bdef.findtext("iconColor")
         if self.iconColor is not None:
             self.iconColor = parseColor(self.iconColor)
@@ -153,7 +167,7 @@ class gene:
         return d
 
 
-genes: List[dict] = []
+genes: List[Dict[str, Any]] = []
 abstract: Dict[str, ET.Element] = {}
 
 for filePath in files:
@@ -171,18 +185,18 @@ for filePath in files:
 # Additional genes
 # Aptitudes (skills)
 skills = ["Shooting", "Melee", "Construction", "Mining", "Cooking",
-          "Plants", "Animals", "Crafting", "Artistic", "Medicine", "Intelligence"]
-aptitudeLevels = {"AptitudeTerrible": ("Awful", -8, 1, 2), "AptitudePoor": (
-    "Poor", -4, 1, 1), "AptitudeStrong": ("Strong", 4, 2, -1), "AptitudeRemarkable": ("Great", 8, 2, -3)}
+          "Plants", "Animals", "Crafting", "Artistic", "Medicine", "Intellectual"]
+aptitudeLevels = {"Terrible": ("Awful", -8, 1, 2), "Poor": ("Poor", -4, 1, 1),
+                  "Strong": ("Strong", 4, 2, -1), "Remarkable": ("Great", 8, 2, -3)}
 order = 0
 for skill in skills:
     for level in aptitudeLevels:
         genes.append({
-            "name": f"{level}_{skill}",
+            "name": f"Aptitude{level}_{skill}",
             "label": f"{aptitudeLevels[level][0]} {skill}",
             # labelShortAdj
             "desc": f"The carrier's aptitude in {skill} is {'reduced' if aptitudeLevels[level][1] < 0 else 'increased'} by {abs(aptitudeLevels[level][1])}. Aptitude acts like an offset on skill level.{' Additionally, all passion is removed from ' + skill + '.' if aptitudeLevels[level][1] < 0 else ''}",
-            "iconPath": f"UI/Icons/Genes/Gene_{level}_{skill}",  # unchecked
+            "iconPath": f"UI/Icons/Genes/Skills/{skill}/{level}",
             "displayCategory": "Aptitudes",
             "displayOrder": order,
             "metabolism": aptitudeLevels[level][2],
@@ -193,6 +207,7 @@ for skill in skills:
             # none of the rest (it only does skills)
         })
         order += 1
+        graphicsSearch.add(genes[-1]["iconPath"])
 
 # Drugs
 drugs = {"Alcohol": ("Alcohol", True), "Smokeleaf": ("Smokeleaf", True), "Psychite": (
@@ -209,7 +224,7 @@ for drug in drugs:
             "label": f"{drugs[drug][0]} {drugLevels[level][0]}",
             # labelShortAdj
             "desc": drugLevels[level][1](drugs[drug][0]),
-            "iconPath": f"UI/Icons/Genes/Gene_{level}_{drug}",  # unchecked
+            "iconPath": f"UI/Icons/Genes/Chemicals/{drug}/{level}",
             "displayCategory": "Drugs",
             "displayOrder": order,
             "metabolism": drugLevels[level][3][0 if drugs[drug][1] else 1],
@@ -219,6 +234,13 @@ for drug in drugs:
             # some other stuff that's the actual effects
         })
         order += 1
+        graphicsSearch.add(genes[-1]["iconPath"])
+
+gfxDef = loadGraphics(graphicsDir, (128, 128),
+                      list(graphicsSearch), "genes.png")
+for g in genes:
+    if "iconPath" in g:
+        g["iconPath"] = gfxDef[g["iconPath"]]
 
 genesFileTS = open(Path("./data/genes.ts").resolve(), "w+")
 genesFileJS = open(Path("./page/genes.js").resolve(), "w+")

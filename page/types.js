@@ -33,7 +33,7 @@
  * @property {string} [label]
  * @property {string} [labelShortAdj]
  * @property {string} [desc]
- * @property {string} [iconPath]
+ * @property {{x: number, y: number}} [iconPath]
  * @property {{R: number, G: number, B: number, A: number}} [iconColor]
  * @property {string} [displayCategory]
  * @property {number} [displayOrder]

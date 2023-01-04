@@ -1,5 +1,29 @@
 const params = new URLSearchParams(window.location.search)
+const SVG_NS = "http://www.w3.org/2000/svg";
 
+/** @type {Object.<string,SVGFilterElement>} */
+const colorizerFilters = {}; // string is in the format colorizer000000 (hex)
+/**
+ * @param {RGBA} rgba 
+ * @returns {SVGFilterElement}
+ */
+function colorizer(rgba) {
+    let key = `colorizer${rgba.asHex()}`.replace("#", "");
+    if (key in colorizerFilters)
+        return colorizerFilters[key];
+    let filter = document.createElementNS(SVG_NS, "filter");
+    filter.id = key;
+    colorizerFilters[key] = filter;
+    let colorMatrix = document.createElementNS(SVG_NS, "feColorMatrix");
+    colorMatrix.setAttribute("type", "matrix");
+    colorMatrix.setAttribute("values", `${rgba.R / 255} 0 0 0 0
+                                        0 ${rgba.G / 255} 0 0 0
+                                        0 0 ${rgba.B / 255} 0 0
+                                        0 0 0 1 0`);
+    filter.append(colorMatrix);
+    filterDefs.append(filter);
+    return filter;
+}
 
 class Ruleset {
     minMetabolism = Number.NEGATIVE_INFINITY;
@@ -145,6 +169,26 @@ class RGBA {
 
     asHex() {
         return "#" + this.R.toString(16).padStart(2, "0") + this.G.toString(16).padStart(2, "0") + this.B.toString(16).padStart(2, "0");
+    }
+
+    /**
+     * @returns {{H: number, S: number, V: number, A: number}}
+     */
+    asHSV() {
+        let R01 = this.R / 255.0, G01 = this.G / 255.0, B01 = this.B / 255.0;
+        let max = Math.max(R01, G01, B01);
+        let min = Math.min(R01, G01, B01);
+        let chroma = max - min;
+        let hue = chroma === 0 ? 0 :
+            R01 >= G01 && R01 >= B01 ? ((G01 - B01) / chroma) :
+                G01 >= B01 && G01 >= R01 ? ((B01 - R01) / chroma) + 2 :
+                    ((R01 - G01) / chroma) + 4;
+        return {
+            H: hue * 60,
+            S: max === 0 ? 0 : chroma / max,
+            V: max,
+            A: this.A
+        };
     }
     /**
      * @param {string} hex 
@@ -518,14 +562,17 @@ function buildGenesList(geneList) {
 
         let categoryLabelDiv = document.createElement("div");
         categoryLabelDiv.id = `geneCategoryLabelDiv${key}`;
+        categoryLabelDiv.className = "geneCategoryLabelDiv";
         let categoryLabel = document.createElement("label");
         categoryLabel.id = `geneCategoryLabel${key}`;
+        categoryLabel.className = "geneCategoryLabel";
         categoryLabel.textContent = key;
         categoryLabelDiv.append(categoryLabel);
         geneListDiv.append(categoryLabelDiv);
 
         let categoryGenesDiv = document.createElement("div");
         categoryGenesDiv.id = `geneCategoryListDiv${key}`;
+        categoryGenesDiv.className = "geneCategoryListDiv";
         for (const gene of value) {
             let desc = gene.desc || "";
             if (gene.skills)
@@ -548,6 +595,17 @@ function buildGenesList(geneList) {
             let geneElement = document.createElement("label");
             geneElement.htmlFor = `geneCheckbox${gene.name}`;
             geneElement.className = "geneListItem";
+            let geneImage = document.createElement("img");
+            let imgStyle = `width: 128px; height: 128px; background-image: url(./genes.png); background-clip: border-box; background-position: -${gene.iconPath.x}px -${gene.iconPath.y}px;`;
+            /** @type {RGBA | {R: number, G: number, B: number, A: number}} */
+            let mixColor = gene.skinColor || gene.skinColorOverride || gene.hairColor;
+            if (mixColor) {
+                mixColor = RGBA.fromJSON(mixColor);
+                imgStyle += `filter: url(#${colorizer(mixColor).id});`;
+            }
+            geneImage.style = imgStyle;
+            geneElement.append(geneImage);
+
             geneElement.append(gene.label || gene.name);
             geneElement.title = desc;
             let geneCheckbox = document.createElement("input");
@@ -596,6 +654,11 @@ function buildGenesList(geneList) {
                 let selectedGeneElement = document.createElement("label");
                 selectedGeneElement.htmlFor = geneElement.htmlFor;
                 selectedGeneElement.className = "geneSelectedItem";
+                
+                let selectedGeneImage = document.createElement("img");
+                selectedGeneImage.style = imgStyle; // Applying the same imgStyle from earlier
+                selectedGeneElement.append(selectedGeneImage);
+                
                 selectedGeneElement.append(gene.label || gene.name);
                 selectedGeneElement.title = desc;
                 selectedGeneElement.style = "background-color: #242526;"
@@ -676,6 +739,8 @@ function buildGenesList(geneList) {
 // Grab the elements
 /** @type {HTMLDivElement} */
 var pageCoverDiv;
+/** @type {SVGDefsElement} */
+var filterDefs;
 /** @type {HTMLInputElement} */
 var firstNameInput;
 /** @type {HTMLInputElement} */
@@ -792,7 +857,8 @@ function loadHTMLElements() {
     geneListDiv = document.getElementById("geneListDiv");
 
     // Other
-    pageCoverDiv = document.getElementById("pageCover")
+    pageCoverDiv = document.getElementById("pageCover");
+    filterDefs = document.getElementById("filterDefs");
 }
 
 // And the data thingies
