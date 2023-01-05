@@ -204,8 +204,8 @@ for skill in skills:
             "iconPath": f"UI/Icons/Genes/Skills/{skill}/{level}",
             "displayCategory": "Aptitudes",
             "displayOrder": order,
-            "metabolism": aptitudeLevels[level][2],
-            "complexity": aptitudeLevels[level][3],
+            "metabolism": aptitudeLevels[level][3],
+            "complexity": aptitudeLevels[level][2],
             # This is made-up for app purposes and does not use real game tags
             "exclusionTags": [f"Aptitude{skill}"],
             "skills": dict([(skill, aptitudeLevels[level][1])])
