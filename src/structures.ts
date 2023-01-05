@@ -1,6 +1,7 @@
 import { adulthoods } from "../data/adulthoods";
 import { childhoods } from "../data/childhoods";
 import { genes } from "../data/genes";
+import { traits } from "../data/traits";
 import xml from "xml";
 
 function pickRandom<T>(list: T[]): T {

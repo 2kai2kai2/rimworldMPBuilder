@@ -981,14 +981,14 @@ addEventListener("DOMContentLoaded", async (event) => {
     hairColorPicker.addEventListener("input", (ev) => pawn.hairColor = RGBA.fromHex(ev.target.value));
 
     bioAgeInput.addEventListener("change", (ev) => {
-        pawn.tickAgeBio = bioAgeInput.value * 3600000;
+        pawn.tickAgeBio = Number.toString(bioAgeInput.value) * 3600000;
         if (pawn.tickAgeChron < pawn.tickAgeBio) {
             pawn.tickAgeChron = pawn.tickAgeBio;
             chronAgeInput.value = bioAgeInput.value;
         }
     });
     chronAgeInput.addEventListener("change", (ev) => {
-        pawn.tickAgeChron = chronAgeInput.value * 3600000;
+        pawn.tickAgeChron = Number.toString(chronAgeInput.value) * 3600000;
         if (pawn.tickAgeChron < pawn.tickAgeBio) {
             pawn.tickAgeBio = pawn.tickAgeChron;
             bioAgeInput.value = chronAgeInput.value;
@@ -1004,7 +1004,7 @@ addEventListener("DOMContentLoaded", async (event) => {
      */
     function addSkillChangeListener(input, skill) {
         input.addEventListener("change", (ev) => {
-            pawn.skills[skill] = input.value;
+            pawn.skills[skill] = Number.parseInt(input.value);
         });
     }
     addSkillChangeListener(shootingInput, "Shooting");
