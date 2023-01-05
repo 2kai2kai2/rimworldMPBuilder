@@ -117,15 +117,15 @@ async function deletePawn(env: Env, gameID: string, token: string) {
 }
 
 
-function jsonResponse(json: any | null, _status: number): Response {
+function jsonResponse(json: any | null, _status: number, addHeaders: {[key: string]: any} = {}): Response {
     if (json !== null)
         json = JSON.stringify(json);
-    return new Response(json, {
-        status: _status, headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Content-Type": "application/json"
-        }
-    });
+    let _headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Content-Type": "application/json"
+    };
+    Object.assign(_headers, addHeaders);
+    return new Response(json, {status: _status, headers: _headers});
 }
 function errResponse(err: string, _status: number = 400): Response {
     return jsonResponse({ error: err }, _status);
@@ -140,7 +140,7 @@ router.options("*", (request, env: Env) => new Response(null, {
         "Allow": "GET, POST, PUT, DELETE, OPTIONS",
         "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
         "Access-Control-Allow-Headers": "gameID, token, Content-Type",
-        "Cache-Control": "public, max-age=604800"
+        "Access-Control-Max-Age": "86400"
     }
 }));
 
@@ -149,7 +149,7 @@ router.get("/game/rules", (request, env: Env) => {
     if (gameID === null)
         return errResponse("No gameID provided.");
     return getRules(env, gameID)
-        .then((rules) => jsonResponse({ "gameID": gameID, "rules": rules }, 200))
+        .then((rules) => jsonResponse({ "gameID": gameID, "rules": rules }, 200, {"Cache-Control": "max-age=86400", "Vary": "gameID"}))
         .catch(() => errResponse("Unable to find game with specified gameID.", 404));
 });
 router.get("/game/export", async (request, env: Env) => {
