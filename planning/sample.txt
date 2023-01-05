@@ -1,13 +1,52 @@
-GET: header {
+/*
++-------------------------------------------------------------------------+
+|                                                                         |
+|                                 /game/*                                 |
+|                                                                         |
++-------------------------------------------------------------------------+
+*/
+// ==== Query game rules ====
+GET /game/rules
+header {
     "gameID": "(id)"
 }
 RESPONSE: {
     "gameID": "(id)",
     "rules": <game rules JSON object>
 }
-// This one should query the rules
 
-GET: header {
+// ==== Export game ====
+GET /game/preset
+header {
+    "gameID": "(id)"
+}
+Response: (full export text)
+
+// ==== New game ====
+POST /game
+body: <rules JSON object>
+RESPONSE: {
+    "gameID": "(id)"
+}
+
+// ==== Delete game ====
+DELETE /game
+header {
+    "gameID": "(id)"
+}
+RESPONSE: { }
+
+/*
++-------------------------------------------------------------------------+
+|                                                                         |
+|                                  /pawn                                  |
+|                                                                         |
++-------------------------------------------------------------------------+
+*/
+// ==== Query pawn ====
+// Typically should be stored by the client
+GET /pawn
+header {
     "gameID": "(id)",
     "token": "(token)"
 }
@@ -16,37 +55,29 @@ RESPONSE: {
     "token": "(token)"
     "pawn": <pawn JSON object>
 }
-// This one should receive back the pawn that was last saved. typically, we want to cache this in cookies.
 
-POST: body: <rules JSON object>
-RESPONSE: {
-    "gameID": "(id)"
-}
-// new game
-
-POST: header {
+// ==== New pawn ====
+POST /pawn
+header {
     "gameID": "(id)"
 } body: <pawn JSON object>
 RESPONSE: {
     "gameID": "(id)",
     "token": "(token)"
 }
-// new (not replace) pawn
 
-PUT: header {
+// ==== Update pawn ====
+PUT /pawn
+header {
     "gameID": "(id)",
     "token": "(token)"
 } body: <pawn JSON object>
 RESPONSE: { }
-// Update previous
 
-DELETE: header {
+// ==== Delete pawn ====
+DELETE /pawn
+header {
     "gameID": "(id)",
     "token": "(token)"
-}
-RESPONSE: { }
-
-DELETE: header {
-    "gameID": "(id)"
 }
 RESPONSE: { }

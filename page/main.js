@@ -1,5 +1,6 @@
 const params = new URLSearchParams(window.location.search)
 const SVG_NS = "http://www.w3.org/2000/svg";
+const URL = "http://localhost:8787";
 
 /** @type {Object.<string,SVGFilterElement>} */
 const colorizerFilters = {}; // string is in the format colorizer000000 (hex)
@@ -883,7 +884,7 @@ addEventListener("DOMContentLoaded", async (event) => {
     }
     gameID = params.get("g").trim();
 
-    let r = await fetch("http://localhost:8787", { method: "GET", headers: { "gameID": gameID } });
+    let r = await fetch(`${URL}/game/rules`, { method: "GET", headers: { "gameID": gameID } });
     if (!r.ok) { // the params are probably invalid
         alert("Invalid game parameter. Maybe it has ended?");
         return;
@@ -1016,7 +1017,7 @@ addEventListener("DOMContentLoaded", async (event) => {
         // verify?
         pawn.save();
         if (token === null) {
-            let r = await fetch("http://localhost:8787", {
+            let r = await fetch(`${URL}/pawn`, {
                 method: "POST",
                 headers: { "gameID": gameID },
                 body: window.localStorage.getItem(`${gameID}:PAWN`)
@@ -1035,7 +1036,7 @@ addEventListener("DOMContentLoaded", async (event) => {
                 alert("Could not save to server: " + rbody.error);
             }
         } else {
-            let r = await fetch("http://localhost:8787", {
+            let r = await fetch(`${URL}/pawn`, {
                 method: "PUT",
                 headers: { "gameID": gameID, "token": token },
                 body: window.localStorage.getItem(`${gameID}:PAWN`)

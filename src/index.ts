@@ -3,6 +3,7 @@ import { adulthoods } from "../data/adulthoods";
 import { childhoods } from "../data/childhoods";
 import { genes } from "../data/genes";
 import xml from "xml";
+import { Router } from "itty-router";
 
 /**
  * Welcome to Cloudflare Workers! This is your first worker.
@@ -131,42 +132,68 @@ function errResponse(err: string, _status: number = 400): Response {
 }
 
 
-async function handleGET(env: Env, request: Request): Promise<Response> {
+const router = Router();
+router.options("*", (request, env: Env) => new Response(null, {
+    status: 204, headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Content-Type": "application/json",
+        "Allow": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "gameID, token, Content-Type",
+        "Cache-Control": "public, max-age=604800"
+    }
+}));
+
+router.get("/game/rules", (request, env: Env) => {
     let gameID: string | null = request.headers.get("gameID");
     if (gameID === null)
-        return errResponse("oops!");
+        return errResponse("No gameID provided.");
+    return getRules(env, gameID)
+        .then((rules) => jsonResponse({ "gameID": gameID, "rules": rules }, 200))
+        .catch(() => errResponse("Unable to find game with specified gameID.", 404));
+});
+router.get("/game/export", (request, env: Env) => {
 
+});
+router.get("/pawn", (request, env: Env) => {
+    let gameID: string | null = request.headers.get("gameID");
+    if (gameID === null)
+        return errResponse("No gameID provided.");
     let token: string | null = request.headers.get("token");
-    if (token !== null) { // send last saved pawn
-        return getPawn(env, gameID, token)
-            .then((pawn) => jsonResponse({ "gameID": request.headers.get("gameID"), "token": token, "pawn": pawn }, 200))
-            .catch(() => errResponse("Unable to find pawn with specified gameID and token.", 404));
-    } else { // send rules
-        return getRules(env, gameID)
-            .then((rules) => jsonResponse({ "gameID": gameID, "rules": rules }, 200))
-            .catch(() => errResponse("Unable to find game with specified gameID.", 404));
-    }
-}
+    if (token === null)
+        return errResponse("No pawn token provided.");
+    return getPawn(env, gameID, token)
+        .then((pawn) => jsonResponse({ "gameID": request.headers.get("gameID"), "token": token, "pawn": pawn }, 200))
+        .catch(() => errResponse("Unable to find pawn with specified gameID and token.", 404));
+});
 
-async function handlePOST(env: Env, request: Request): Promise<Response> {
+router.post("/game", async (request, env: Env) => {
     let json: any;
     try {
         json = await request.json();
     } catch (error) {
         return errResponse("Unable to parse JSON body.");
     }
+    // TODO: Verify rules are not malformed
+    return createGame(env, json)
+        .then((gameID) => jsonResponse({ "gameID": gameID }, 201));
+});
+router.post("/pawn", async (request, env: Env) => {
     let gameID: string | null = request.headers.get("gameID");
-    if (gameID === null) {
-        // TODO: Verify rules are not malformed
-        return createGame(env, json)
-            .then((gameID) => jsonResponse({ "gameID": gameID }, 201));
+    if (gameID === null)
+        return errResponse("No gameID provided.");
+
+    let json: any;
+    try {
+        json = await request.json();
+    } catch (error) {
+        return errResponse("Unable to parse JSON body.");
     }
     return addPawn(env, gameID, json)
         .then((token) => jsonResponse({ gameID: gameID, token: token }, 201))
         .catch(() => errResponse("Unable to find game with specified gameID.", 404));
-}
-
-async function handlePUT(env: Env, request: Request): Promise<Response> {
+});
+router.put("/pawn", async (request, env: Env) => {
     let gameID: string | null = request.headers.get("gameID");
     if (gameID === null)
         return errResponse("No gameID provided.");
@@ -183,23 +210,27 @@ async function handlePUT(env: Env, request: Request): Promise<Response> {
     return setPawn(env, gameID, token, json)
         .then(() => jsonResponse(null, 204))
         .catch(() => errResponse("Could not find the pawn to modify.", 404));
-}
-
-async function handleDELETE(env: Env, request: Request): Promise<Response> {
+});
+router.delete("/game", (request, env: Env) => {
+    let gameID: string | null = request.headers.get("gameID");
+    if (gameID === null)
+        return errResponse("No gameID provided.");
+    return deleteGame(env, gameID)
+        .then(() => jsonResponse(null, 204))
+        .catch(() => errResponse("Could not find the game to delete.", 404));
+});
+router.delete("/pawn", (request, env: Env) => {
     let gameID: string | null = request.headers.get("gameID");
     if (gameID === null)
         return errResponse("No gameID provided.");
     let token: string | null = request.headers.get("token");
-    if (token !== null) {
-        return deletePawn(env, gameID, token)
-            .then(() => jsonResponse(null, 204))
-            .catch(() => errResponse("Could not find the pawn to delete.", 404));
-    } else {
-        return deleteGame(env, gameID)
-            .then(() => jsonResponse(null, 204))
-            .catch(() => errResponse("Could not find the game to delete.", 404));
-    }
-}
+    if (token === null)
+        return errResponse("No pawn token provided.");
+    return deletePawn(env, gameID, token)
+        .then(() => jsonResponse(null, 204))
+        .catch(() => errResponse("Could not find the pawn to delete.", 404));
+})
+router.all("*", () => errResponse("Not Found", 404));
 
 export default {
     async fetch(
@@ -207,27 +238,7 @@ export default {
         env: Env,
         ctx: ExecutionContext
     ): Promise<Response> {
-        switch (request.method) {
-            case "GET":
-                return handleGET(env, request);
-            case "POST":
-                return handlePOST(env, request);
-            case "PUT":
-                return handlePUT(env, request);
-            case "DELETE":
-                return handleDELETE(env, request);
-            case "OPTIONS":
-                return new Response(null, {
-                    status: 204, headers: {
-                        "Access-Control-Allow-Origin": "*",
-                        "Content-Type": "application/json",
-                        "Allow": "GET, POST, PUT, DELETE, OPTIONS",
-                        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-                        "Access-Control-Allow-Headers": "gameID, token, Content-Type"
-                    }
-                });
-            default:
-                return errResponse("Invalid Method", 405);
-        }
+        return router.handle(request, env)
+            .catch((err: Error | any) => errResponse(err.message || "Unexpected internal error."));
     },
 };
