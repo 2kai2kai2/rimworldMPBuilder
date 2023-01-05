@@ -1,6 +1,6 @@
 const params = new URLSearchParams(window.location.search)
 const SVG_NS = "http://www.w3.org/2000/svg";
-const serverURL = "http://localhost:8787";
+const serverURL = "https://rimworldmpbuilder.2kai2kai2.workers.dev";
 
 /** @type {Object.<string,SVGFilterElement>} */
 const colorizerFilters = {}; // string is in the format colorizer000000 (hex)
