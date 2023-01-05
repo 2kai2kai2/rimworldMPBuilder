@@ -25,6 +25,10 @@ export interface Env {
     // MY_BUCKET: R2Bucket;
 }
 
+function kvPawnRef(gameID: string, token: string): string {
+    return `${gameID}:${token}`;
+}
+
 function generateID(): string {
     return Math.floor(Math.random() * Math.pow(16, 8)).toString(16).padStart(8, "0") + Math.floor(Math.random() * Math.pow(16, 8)).toString(16).padStart(8, "0");
 }
@@ -32,7 +36,7 @@ function generateID(): string {
 async function gameExists(env: Env, gameID: string): Promise<boolean> {
     if (gameID.includes(":"))
         return false;
-    return (await env.KV.get(gameID)) !== null;
+    return env.KV.get(gameID).then((value) => value !== null);
 }
 
 async function createGame(env: Env, rules: Ruleset): Promise<string> {
@@ -51,19 +55,19 @@ async function deleteGame(env: Env, gameID: string) {
 }
 
 async function getRules(env: Env, gameID: string): Promise<Ruleset> {
-    let rules: string | null = await env.KV.get(gameID);
-    if (rules === null)
-        throw new Error("Invalid gameID passed.");
-    return JSON.parse(rules);
+    return env.KV.get(gameID).then((rules) => {
+        if (rules === null)
+            throw new Error("Invalid gameID passed.");
+        return JSON.parse(rules);
+    });
 }
 
 async function hasToken(env: Env, gameID: string, token: string): Promise<boolean> {
-    let pawn: string | null = await env.KV.get(gameID + ":" + token);
-    return pawn !== null;
+    return env.KV.get(kvPawnRef(gameID, token)).then((pawn) => pawn !== null);
 }
 
 async function getPawn(env: Env, gameID: string, token: string): Promise<Pawn> {
-    let pawn: string | null = await env.KV.get(gameID + ":" + token);
+    let pawn: string | null = await env.KV.get(kvPawnRef(gameID, token));
     if (pawn === null)
         throw new Error("Unable to locate pawn.");
     return JSON.parse(pawn);
@@ -75,8 +79,8 @@ async function addPawn(env: Env, gameID: string, pawn: Pawn): Promise<string> {
     let token: string;
     do {
         token = generateID();
-    } while ((await env.KV.get(gameID + ":" + token)) !== null);
-    await env.KV.put(gameID + ":" + token, JSON.stringify(pawn));
+    } while ((await env.KV.get(kvPawnRef(gameID, token))) !== null);
+    await env.KV.put(kvPawnRef(gameID, token), JSON.stringify(pawn));
     return token;
 }
 
@@ -85,7 +89,7 @@ async function setPawn(env: Env, gameID: string, token: string, pawn: Pawn) {
         throw new Error("Invalid gameID passed.");
     if (!await hasToken(env, gameID, token))
         throw new Error("Invalid token passed.");
-    await env.KV.put(gameID + ":" + token, JSON.stringify(pawn));
+    await env.KV.put(kvPawnRef(gameID, token), JSON.stringify(pawn));
     return token;
 }
 
@@ -94,7 +98,7 @@ async function deletePawn(env: Env, gameID: string, token: string) {
         throw new Error("Invalid gameID passed.");
     if (!await hasToken(env, gameID, token))
         throw new Error("Invalid token passed.");
-    await env.KV.delete(gameID + ":" + token);
+    await env.KV.delete(kvPawnRef(gameID, token));
 }
 
 
@@ -120,45 +124,32 @@ async function handleGET(env: Env, request: Request): Promise<Response> {
 
     let token: string | null = request.headers.get("token");
     if (token !== null) { // send last saved pawn
-        let pawn: Pawn;
-        try {
-            pawn = await getPawn(env, gameID, token);
-        } catch (error) {
-            return errResponse("Unable to find pawn with specified gameID and token.", 404);
-        }
-        return jsonResponse({ "gameID": request.headers.get("gameID"), "token": token, "pawn": pawn }, 200);
+        return getPawn(env, gameID, token)
+            .then((pawn) => jsonResponse({ "gameID": request.headers.get("gameID"), "token": token, "pawn": pawn }, 200))
+            .catch(() => errResponse("Unable to find pawn with specified gameID and token.", 404));
     } else { // send rules
-        let rules: Ruleset;
-        try {
-            rules = await getRules(env, gameID);
-        } catch (error) {
-            return errResponse("Unable to find game with specified gameID.", 404);
-        }
-        return jsonResponse({ "gameID": gameID, "rules": rules }, 200);
+        return getRules(env, gameID)
+            .then((rules) => jsonResponse({ "gameID": gameID, "rules": rules }, 200))
+            .catch(() => errResponse("Unable to find game with specified gameID.", 404));
     }
 }
 
 async function handlePOST(env: Env, request: Request): Promise<Response> {
     let json: any;
     try {
-        json = await request.json()
+        json = await request.json();
     } catch (error) {
         return errResponse("Unable to parse JSON body.");
     }
     let gameID: string | null = request.headers.get("gameID");
     if (gameID === null) {
         // TODO: Verify rules are not malformed
-        gameID = await createGame(env, json)
-        return jsonResponse({ "gameID": gameID }, 201);
+        return createGame(env, json)
+            .then((gameID) => jsonResponse({ "gameID": gameID }, 201));
     }
-
-    let _token: string;
-    try {
-        _token = await addPawn(env, gameID, json);
-    } catch {
-        return errResponse("Unable to find game with specified gameID.", 404);
-    }
-    return jsonResponse({ gameID: gameID, token: _token }, 201);
+    return addPawn(env, gameID, json)
+        .then((token) => jsonResponse({ gameID: gameID, token: token }, 201))
+        .catch(() => errResponse("Unable to find game with specified gameID.", 404));
 }
 
 async function handlePUT(env: Env, request: Request): Promise<Response> {
@@ -175,13 +166,9 @@ async function handlePUT(env: Env, request: Request): Promise<Response> {
     } catch (error) {
         return errResponse("Unable to parse JSON body.", 400);
     }
-
-    try {
-        await setPawn(env, gameID, token, json);
-    } catch {
-        return errResponse("Could not find the pawn to modify.", 404);
-    }
-    return jsonResponse(null, 204);
+    return setPawn(env, gameID, token, json)
+        .then(() => jsonResponse(null, 204))
+        .catch(() => errResponse("Could not find the pawn to modify.", 404));
 }
 
 async function handleDELETE(env: Env, request: Request): Promise<Response> {
@@ -190,19 +177,13 @@ async function handleDELETE(env: Env, request: Request): Promise<Response> {
         return errResponse("No gameID provided.");
     let token: string | null = request.headers.get("token");
     if (token !== null) {
-        try {
-            await deletePawn(env, gameID, token);
-        } catch {
-            return errResponse("Could not find the pawn to delete.", 404);
-        }
-        return jsonResponse(null, 204);
+        return deletePawn(env, gameID, token)
+            .then(() => jsonResponse(null, 204))
+            .catch(() => errResponse("Could not find the pawn to delete.", 404));
     } else {
-        try {
-            await deleteGame(env, gameID)
-        } catch {
-            return errResponse("Could not find the game to delete.", 404);
-        }
-        return jsonResponse(null, 204);
+        return deleteGame(env, gameID)
+            .then(() => jsonResponse(null, 204))
+            .catch(() => errResponse("Could not find the game to delete.", 404));
     }
 }
 
@@ -214,13 +195,13 @@ export default {
     ): Promise<Response> {
         switch (request.method) {
             case "GET":
-                return await handleGET(env, request);
+                return handleGET(env, request);
             case "POST":
-                return await handlePOST(env, request);
+                return handlePOST(env, request);
             case "PUT":
-                return await handlePUT(env, request);
+                return handlePUT(env, request);
             case "DELETE":
-                return await handleDELETE(env, request);
+                return handleDELETE(env, request);
             case "OPTIONS":
                 return new Response(null, {
                     status: 204, headers: {
@@ -232,7 +213,7 @@ export default {
                     }
                 });
             default:
-                return new Response(JSON.stringify({ error: "Invalid Method" }), { status: 405 });
+                return errResponse("Invalid Method", 405);
         }
     },
 };

@@ -864,8 +864,6 @@ function loadHTMLElements() {
 // And the data thingies
 /** @type {Ruleset} */
 var ruleset;
-/** @type {string} */
-var token;
 /** @type {Pawn} */
 var pawn;
 /** @type {Backstory} */
