@@ -981,14 +981,14 @@ addEventListener("DOMContentLoaded", async (event) => {
     hairColorPicker.addEventListener("input", (ev) => pawn.hairColor = RGBA.fromHex(ev.target.value));
 
     bioAgeInput.addEventListener("change", (ev) => {
-        pawn.tickAgeBio = Number.toString(bioAgeInput.value) * 3600000;
+        pawn.tickAgeBio = Number.parseInt(bioAgeInput.value) * 3600000;
         if (pawn.tickAgeChron < pawn.tickAgeBio) {
             pawn.tickAgeChron = pawn.tickAgeBio;
             chronAgeInput.value = bioAgeInput.value;
         }
     });
     chronAgeInput.addEventListener("change", (ev) => {
-        pawn.tickAgeChron = Number.toString(chronAgeInput.value) * 3600000;
+        pawn.tickAgeChron = Number.parseInt(chronAgeInput.value) * 3600000;
         if (pawn.tickAgeChron < pawn.tickAgeBio) {
             pawn.tickAgeBio = pawn.tickAgeChron;
             bioAgeInput.value = chronAgeInput.value;
