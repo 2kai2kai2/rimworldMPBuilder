@@ -29,6 +29,32 @@ div.minorDiv {
     margin: 1em;
     padding: 1em;
 }
+
+/* Top Bar */
+#exportDivContainer {
+    min-width: 7em;
+    position: relative;
+}
+#exportDiv {
+    position: absolute;
+    top: 1em;
+    right: 1em;
+    left: 1em;
+    background-color: #131616;
+    border-radius: 0.5em;
+    padding: 0.5em;
+}
+#exportDiv>label {
+    display: block;
+    width: 100%;
+}
+#exportDiv>input, #exportDiv>hr {
+    display: none;
+}
+#exportDiv:hover>input, #exportDiv:hover>hr {
+    display: inherit;
+}
+
 /* MainDiv -> middle column specific */
 div.ageDiv {
     margin: 0.5em;

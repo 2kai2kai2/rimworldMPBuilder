@@ -39,7 +39,7 @@ async function exportPreset(env: Env, gameID: string): Promise<string> {
         let pawnItem: string = await env.KV.get(pawn.name) || "shouldn't be possible";
         out += "<li>" + pawnToXML(JSON.parse(pawnItem)) + "</li>";
     }
-    out += "<parentChildGroups /><relationships /><equipment /></preset>";
+    out += "</pawns><parentChildGroups /><relationships /><equipment /></preset>";
     return out;
 }
 
@@ -136,7 +136,7 @@ const router = Router();
 router.options("*", (request, env: Env) => new Response(null, {
     status: 204, headers: {
         "Access-Control-Allow-Origin": "*",
-        "Content-Type": "application/json",
+        "Content-Type": "application/json, application/xml",
         "Allow": "GET, POST, PUT, DELETE, OPTIONS",
         "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
         "Access-Control-Allow-Headers": "gameID, token, Content-Type",
@@ -152,8 +152,16 @@ router.get("/game/rules", (request, env: Env) => {
         .then((rules) => jsonResponse({ "gameID": gameID, "rules": rules }, 200))
         .catch(() => errResponse("Unable to find game with specified gameID.", 404));
 });
-router.get("/game/export", (request, env: Env) => {
-
+router.get("/game/export", async (request, env: Env) => {
+    let gameID: string | null = request.headers.get("gameID");
+    if (gameID === null)
+        return errResponse("No gameID provided.");
+    return exportPreset(env, gameID).then((content) => new Response(content, {
+        status: 200, headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Content-Type": "application/xml"
+        }
+    })).catch((err) => errResponse(err.message, 404));
 });
 router.get("/pawn", (request, env: Env) => {
     let gameID: string | null = request.headers.get("gameID");

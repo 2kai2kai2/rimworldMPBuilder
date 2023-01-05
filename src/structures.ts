@@ -14,7 +14,7 @@ export class RGBA {
     }
 }
 function RGBAtoString(rgba: RGBA): string {
-    return `RGBA(${Math.round(rgba.R * 1000) / 1000}, ${Math.round(rgba.G * 1000) / 1000}, ${Math.round(rgba.B * 1000) / 1000}, ${Math.round(rgba.A * 1000) / 1000})`;
+    return `RGBA(${(rgba.R / 255).toFixed(3)}, ${(rgba.G / 255).toFixed(3)}, ${(rgba.B / 255).toFixed(3)}, ${rgba.A.toFixed(3)})`;
 }
 
 export class Genotype {

@@ -1,6 +1,6 @@
 const params = new URLSearchParams(window.location.search)
 const SVG_NS = "http://www.w3.org/2000/svg";
-const URL = "http://localhost:8787";
+const serverURL = "http://localhost:8787";
 
 /** @type {Object.<string,SVGFilterElement>} */
 const colorizerFilters = {}; // string is in the format colorizer000000 (hex)
@@ -655,11 +655,11 @@ function buildGenesList(geneList) {
                 let selectedGeneElement = document.createElement("label");
                 selectedGeneElement.htmlFor = geneElement.htmlFor;
                 selectedGeneElement.className = "geneSelectedItem";
-                
+
                 let selectedGeneImage = document.createElement("img");
                 selectedGeneImage.style = imgStyle; // Applying the same imgStyle from earlier
                 selectedGeneElement.append(selectedGeneImage);
-                
+
                 selectedGeneElement.append(gene.label || gene.name);
                 selectedGeneElement.title = desc;
                 selectedGeneElement.style = "background-color: #242526;"
@@ -754,6 +754,8 @@ var favoriteColorPicker;
 var maleRadioButton;
 /** @type {HTMLInputElement} */
 var submitButton;
+/** @type {HTMLInputElement} */
+var exportPresetButton;
 
 /** @type {HTMLInputElement} */
 var femaleRadioButton;
@@ -822,6 +824,7 @@ function loadHTMLElements() {
     lastNameInput = document.getElementById("lastNameInput");
     favoriteColorPicker = document.getElementById("favoriteColor");
     submitButton = document.getElementById("submitButton");
+    exportPresetButton = document.getElementById("exportPresetButton");
     // Pawn->Main->Left
     maleRadioButton = document.getElementById("maleRadioButton");
     femaleRadioButton = document.getElementById("femaleRadioButton");
@@ -884,7 +887,7 @@ addEventListener("DOMContentLoaded", async (event) => {
     }
     gameID = params.get("g").trim();
 
-    let r = await fetch(`${URL}/game/rules`, { method: "GET", headers: { "gameID": gameID } });
+    let r = await fetch(`${serverURL}/game/rules`, { method: "GET", headers: { "gameID": gameID } });
     if (!r.ok) { // the params are probably invalid
         alert("Invalid game parameter. Maybe it has ended?");
         return;
@@ -1017,7 +1020,7 @@ addEventListener("DOMContentLoaded", async (event) => {
         // verify?
         pawn.save();
         if (token === null) {
-            let r = await fetch(`${URL}/pawn`, {
+            let r = await fetch(`${serverURL}/pawn`, {
                 method: "POST",
                 headers: { "gameID": gameID },
                 body: window.localStorage.getItem(`${gameID}:PAWN`)
@@ -1036,7 +1039,7 @@ addEventListener("DOMContentLoaded", async (event) => {
                 alert("Could not save to server: " + rbody.error);
             }
         } else {
-            let r = await fetch(`${URL}/pawn`, {
+            let r = await fetch(`${serverURL}/pawn`, {
                 method: "PUT",
                 headers: { "gameID": gameID, "token": token },
                 body: window.localStorage.getItem(`${gameID}:PAWN`)
@@ -1050,6 +1053,35 @@ addEventListener("DOMContentLoaded", async (event) => {
             }
         }
     });
+    exportPresetButton.onclick = async (ev) => {
+        // This is really easy to get around but will stop most unskilled or (if you're looking at this) hopefully undedicated spammers (so please don't, thanks :D )
+        let clickTime = Date.now();
+        let lastExport = exportPresetButton.getAttribute("lastExport");
+        if (lastExport !== undefined && clickTime - Number.parseInt(lastExport) < 30 * 1000) {
+            alert("You must wait at least 30s between exports!");
+            return;
+        }
+        exportPresetButton.setAttribute("lastExport", clickTime);
+
+        fetch(`${serverURL}/game/export`, {method: "GET", headers: {"gameID": gameID}})
+        .then(async (res) => {
+            if (!res.ok) {
+                alert("Error: " + ((await res.json()).error) || "Received bad response; no further information received from server.");
+                return;
+            }
+            res.blob().then((blob) => {
+                let downloader = document.createElement("a");
+                downloader.href = URL.createObjectURL(blob)
+                downloader.download = "preset.pcp";
+                downloader.dispatchEvent(new MouseEvent("click"));
+
+                setTimeout(() => {
+                    URL.revokeObjectURL(downloader.href);
+                    downloader.remove();
+                });
+            });
+        }).catch((err) => alert("Error: " + (err.message || "something went wrong. That's not very helpful, I suppose.")));
+    };
 
     pageCoverDiv.hidden = true;
 });
