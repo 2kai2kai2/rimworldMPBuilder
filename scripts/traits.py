@@ -156,7 +156,7 @@ for filePath in files:
         traits.append(b.export())
 
 traitsFileTS = open(Path("./data/traits.ts").resolve(), "w+")
-traitsFileJS = open(Path("./page/traits.js").resolve(), "w+")
+traitsFileJS = open(Path("./docs/traits.js").resolve(), "w+")
 jsonString = json.dumps(traits, separators=(",", ":"))
 traitsFileTS.write(f"export var traits = {jsonString};")
 traitsFileJS.write("/** @type { Trait[] } */\n" +

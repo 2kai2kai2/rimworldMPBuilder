@@ -248,7 +248,7 @@ for g in genes:
         g["iconPath"] = gfxDef[g["iconPath"]]
 
 genesFileTS = open(Path("./data/genes.ts").resolve(), "w+")
-genesFileJS = open(Path("./page/genes.js").resolve(), "w+")
+genesFileJS = open(Path("./docs/genes.js").resolve(), "w+")
 jsonString = json.dumps(genes, separators=(",", ":"))
 genesFileTS.write(f"export var genes = {jsonString};")
 genesFileJS.write("/** @type { Gene[] } */\n" + f"var genes = {jsonString};")

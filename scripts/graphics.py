@@ -44,5 +44,5 @@ def loadGraphics(directory: str, tileSize: Tuple[int, int], fileStrs: List[str],
         img.paste(tile, (newX, newY))
         graphicsData[s] = {"x": newX, "y": newY}
         tileNum += 1
-    img.save(Path(f"./page/{saveFile}").resolve())
+    img.save(Path(f"./docs/{saveFile}").resolve())
     return graphicsData
