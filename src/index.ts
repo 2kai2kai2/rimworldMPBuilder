@@ -1,8 +1,4 @@
 import { RGBA, Genotype, Skills, Pawn, Ruleset, pawnToXML } from "./structures";
-import { adulthoods } from "../data/adulthoods";
-import { childhoods } from "../data/childhoods";
-import { genes } from "../data/genes";
-import xml from "xml";
 import { Router } from "itty-router";
 
 /**
@@ -182,7 +178,8 @@ router.post("/game", async (request, env: Env) => {
     } catch (error) {
         return errResponse("Unable to parse JSON body.");
     }
-    // TODO: Verify rules are not malformed
+    if (!Ruleset.validate(json))
+        return errResponse("Invalid ruleset JSON.");
     return createGame(env, json)
         .then((gameID) => jsonResponse({ "gameID": gameID }, 201));
 });
@@ -197,6 +194,8 @@ router.post("/pawn", async (request, env: Env) => {
     } catch (error) {
         return errResponse("Unable to parse JSON body.");
     }
+    if (!Pawn.validate(json))
+        return errResponse("Invalid pawn JSON.");
     return addPawn(env, gameID, json)
         .then((token) => jsonResponse({ gameID: gameID, token: token }, 201))
         .catch(() => errResponse("Unable to find game with specified gameID.", 404));
@@ -215,6 +214,8 @@ router.put("/pawn", async (request, env: Env) => {
     } catch (error) {
         return errResponse("Unable to parse JSON body.", 400);
     }
+    if (!Pawn.validate(json))
+        return errResponse("Invalid pawn JSON.");
     return setPawn(env, gameID, token, json)
         .then(() => jsonResponse(null, 204))
         .catch(() => errResponse("Could not find the pawn to modify.", 404));

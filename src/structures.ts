@@ -1,7 +1,19 @@
+import { adulthoods } from "../data/adulthoods";
+import { childhoods } from "../data/childhoods";
+import { genes } from "../data/genes";
 import xml from "xml";
 
 function pickRandom<T>(list: T[]): T {
     return list[Math.floor(Math.random() * list.length)];
+}
+
+/** Can determine with total certainty */
+function isStringArray(item: Array<string> | any): boolean {
+    return Array.isArray(item) && item.every((value) => typeof value === "string");
+}
+
+function inRange(num: number, min: number, max: number): boolean {
+    return min <= num && num <= max;
 }
 
 export class RGBA {
@@ -12,6 +24,11 @@ export class RGBA {
     constructor(R: number = 0, G: number = 0, B: number = 0, A: number = 1) {
         this.R = R; this.B = B; this.G = G; this.A = A;
     }
+    static validate(rgba: any): boolean {
+        let base = new RGBA();
+        return Object.keys(rgba).every((key) => key in base && typeof rgba[key] === "number") &&
+            inRange(rgba.R, 0, 255) && inRange(rgba.G, 0, 255) && inRange(rgba.B, 0, 255) && inRange(rgba.A, 0, 1);
+    }
 }
 function RGBAtoString(rgba: RGBA): string {
     return `RGBA(${(rgba.R / 255).toFixed(3)}, ${(rgba.G / 255).toFixed(3)}, ${(rgba.B / 255).toFixed(3)}, ${rgba.A.toFixed(3)})`;
@@ -21,6 +38,14 @@ export class Genotype {
     xenotype: string = "Baseliner";
     endogenes: string[] = [];
     xenogenes: string[] = [];
+
+    static validate(gt: any): boolean {
+        let base = new Genotype();
+        return Object.keys(gt).every((key) => key in base) &&
+            typeof gt.xenotype === "string" &&
+            isStringArray(gt.endogenes) && gt.endogenes.every((geneName: string) => genes.some((gene) => gene.name === geneName)) &&
+            isStringArray(gt.xenogenes) && gt.xenogenes.every((geneName: string) => genes.some((gene) => gene.name === geneName));
+    }
 }
 
 export class Skills {
@@ -49,36 +74,78 @@ export class Skills {
     MedicineFlames: 0 | 1 | 2 = 0;
     SocialFlames: 0 | 1 | 2 = 0;
     IntellectualFlames: 0 | 1 | 2 = 0;
+
+    /** All skills must be 0-20 and all flames must be 0-2 */
+    static validate(skills: Skills | any): boolean {
+        let base = new Skills();
+        return Object.keys(skills).every((key) => key in base &&
+            typeof skills[key] === "number" &&
+            ((key.includes("Flames") && inRange(skills[key], 0, 2)) ||
+                (!key.includes("Flames") && inRange(skills[key], 0, 20)))
+        );
+    }
 }
 
-export interface Pawn {
-    id: string;
-    firstName: string;
-    nickName: string;
-    lastName: string;
-    tickAgeBio: number;
-    tickAgeChron: number;
+export class Pawn {
+    id: string = "";
+    firstName: string = "";
+    nickName: string = "";
+    lastName: string = "";
+    tickAgeBio: number = 0;
+    tickAgeChron: number = 0;
 
-    childhood: string;
-    adulthood: string;
+    childhood: string = "";
+    adulthood: string = "";
 
-    gender: "Male" | "Female";
-    bodyType: string;
-    headType: string;
-    hair: string;
-    hairColor: RGBA;
-    beard: string;
-    faceTattoo: string;
-    bodyTattoo: string;
-    skinColor: RGBA;
-    melanin: number;
-    favoriteColor: RGBA;
+    gender: "Male" | "Female" = "Male";
+    bodyType: string = "";
+    headType: string = "";
+    hair: string = "";
+    hairColor: RGBA = new RGBA();
+    beard: string = "";
+    faceTattoo: string = "";
+    bodyTattoo: string = "";
+    skinColor: RGBA = new RGBA();
+    melanin: number = 0;
+    favoriteColor: RGBA = new RGBA();
 
-    genotype: Genotype;
-    skills: Skills;
-    traits: { [key: string]: number };
+    genotype: Genotype = new Genotype();
+    skills: Skills = new Skills();
+    traits: { [key: string]: number } = {};
     // apparel default
     // ideology placeholder
+
+    static validate(pawn: Pawn | any): boolean {
+        let base = new Pawn();
+        return Object.keys(pawn).every((key) => key in base) &&
+            typeof pawn.id === "string" &&
+            typeof pawn.firstName === "string" &&
+            typeof pawn.nickName === "string" &&
+            typeof pawn.lastName === "string" &&
+            typeof pawn.tickAgeBio === "number" && pawn.tickAgeBio >= 18 * 3600000 &&
+            typeof pawn.tickAgeChron === "number" && pawn.tickAgeChron >= pawn.tickAgeBio &&
+            typeof pawn.childhood === "string" && childhoods.some((ch) => ch.name === pawn.childhood) &&
+            typeof pawn.adulthood === "string" && adulthoods.some((ah) => ah.name === pawn.adulthood) &&
+            (pawn.gender === "Male" || pawn.gender === "Female") &&
+            typeof pawn.bodyType === "string" &&
+            typeof pawn.headType === "string" &&
+            typeof pawn.hair === "string" &&
+            RGBA.validate(pawn.hairColor) &&
+            typeof pawn.beard === "string" &&
+            typeof pawn.faceTattoo === "string" &&
+            typeof pawn.bodyTattoo === "string" &&
+            RGBA.validate(pawn.skinColor) &&
+            typeof pawn.melanin === "number" && inRange(pawn.melanin, 0, 1) &&
+            RGBA.validate(pawn.favoriteColor) &&
+            Genotype.validate(pawn.genotype) &&
+            Skills.validate(pawn.skills) &&
+            typeof pawn.traits === "object" && pawn.traits !== null &&
+            Object.keys(pawn.traits).every((key) => typeof key === "string" &&
+                typeof pawn.traits[key] === "number" &&
+                Number.isInteger(pawn.traits[key]) &&
+                traits.some((trait) => key === trait.name && pawn.traits[key].toString() in trait.degrees)
+            );
+    }
 }
 
 function flamesStr(num: 0 | 1 | 2): string {
@@ -112,18 +179,22 @@ export function pawnToXML(pawn: Pawn): string {
         { li: [{ name: "Intellectual" }, { value: pawn.skills.Intellectual }, { passion: flamesStr(pawn.skills.IntellectualFlames) }] },
     ];
     let clothesTree = [
-        {li: [
-            {layer: "Pants"},
-            {apparel: "Apparel_Pants"},
-            {stuff: "Synthread"},
-            {color: "RGBA(0.682, 0.859, 0.894, 1.000)"}
-        ]},
-        {li: [
-            {layer: "BottomClothingLayer"},
-            {apparel: "Apparel_CollarShirt"},
-            {stuff: "Synthread"},
-            {color: "RGBA(0.682, 0.859, 0.894, 1.000)"}
-        ]}];
+        {
+            li: [
+                { layer: "Pants" },
+                { apparel: "Apparel_Pants" },
+                { stuff: "Synthread" },
+                { color: "RGBA(0.682, 0.859, 0.894, 1.000)" }
+            ]
+        },
+        {
+            li: [
+                { layer: "BottomClothingLayer" },
+                { apparel: "Apparel_CollarShirt" },
+                { stuff: "Synthread" },
+                { color: "RGBA(0.682, 0.859, 0.894, 1.000)" }
+            ]
+        }];
     let endogenesTree: any[] = [];
     for (const gene of pawn.genotype.endogenes) {
         endogenesTree.push({ li: gene });
@@ -189,5 +260,21 @@ export class Ruleset {
     public verify(pawn: Pawn): string {
         // check metabolism and complexity
         return "";
+    }
+
+    static validate(rules: Ruleset | any): boolean {
+        let base = new Ruleset();
+        return Object.keys(rules).every((key) => key in base) &&
+            typeof rules.minMetabolism === "number" &&
+            typeof rules.maxComplexity === "number" &&
+            isStringArray(rules.bannedGenes) &&
+            isStringArray(rules.bannedTraits) &&
+            typeof rules.maxFlames === "number" &&
+            typeof rules.maxSkillAlloc === "number" &&
+            rules.maxComplexity >= 0 &&
+            rules.bannedGenes.every((geneName: string) => genes.some((gene) => gene.name === geneName)) &&
+            // rules.bannedTraits.every((traitName: string) => traits.some((trait) => trait.name === traitName)) &&
+            rules.maxFlames >= 0 &&
+            rules.maxSkillAlloc >= 0;
     }
 }
