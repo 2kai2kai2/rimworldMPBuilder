@@ -29,6 +29,20 @@ function kvPawnRef(gameID: string, token: string): string {
     return `${gameID}:${token}`;
 }
 
+async function exportPreset(env: Env, gameID: string): Promise<string> {
+    let out = `<?xml version="1.0" encoding="utf-8"?><preset><version>5</version><mods>Core, Royalty, Ideology, Biotech and EdB Prepare Carefully</mods><pawns>`;
+    let pawns = await env.KV.list({ prefix: `${gameID}:` });
+    if (!pawns.list_complete)
+        console.log("Oops! the list of pawns in this game is really long (over 1000). Ignoring the rest. gameID: " + gameID);
+    for (const pawn of pawns.keys) {
+        let pawnItem: string = await env.KV.get(pawn.name) || "shouldn't be possible";
+        out += "<li>" + pawnToXML(JSON.parse(pawnItem)) + "</li>";
+    }
+    out += "<parentChildGroups /><relationships /><equipment /></preset>";
+    return out;
+}
+
+
 function generateID(): string {
     return Math.floor(Math.random() * Math.pow(16, 8)).toString(16).padStart(8, "0") + Math.floor(Math.random() * Math.pow(16, 8)).toString(16).padStart(8, "0");
 }
