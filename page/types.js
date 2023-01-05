@@ -48,6 +48,7 @@
  * @property {Object.<string, number>} [damageFactors]
  * @property {string[]} [disabledWork]
  * @property {string} [endogeneCategory]
+ * @property {number} [selectionWeight]
  * @property {{R: number, G: number, B: number, A: number}} [skinColor]
  * @property {{R: number, G: number, B: number, A: number}} [skinColorOverride]
  * @property {{R: number, G: number, B: number, A: number}} [hairColor]

@@ -95,7 +95,11 @@ class gene:
             self.damageFactors[item.tag] = float(item.text)
         self.disabledWork = [
             x.text for x in bdef.iterfind("./disabledWorkTags/li")]
+        
         self.endogeneCategory = bdef.findtext("endogeneCategory")
+        self.selectionWeight = bdef.findtext("selectionWeight")
+        if self.selectionWeight is not None:
+            self.selectionWeight = float(self.selectionWeight)
         self.skinColor = bdef.findtext("skinColorBase")
         if self.skinColor is not None:
             self.skinColor = parseColor(self.skinColor)
@@ -150,6 +154,7 @@ class gene:
             "damageFactors": self.damageFactors,
             "disabledWork": self.disabledWork,
             "endogeneCategory": self.endogeneCategory,
+            "selectionWeight": self.selectionWeight,
             "skinColor": self.skinColor,
             "skinColorOverride": self.skinColorOverride,
             "hairColor": self.hairColor,

@@ -69,6 +69,27 @@ function pickRandom(list) {
 }
 
 /**
+ * Runs in linear time based on the number of items
+ * @template T
+ * @param {T[]} list
+ * @param {number[]} weights
+ * @returns {T}
+ */
+function pickRandomWeighted(list, weights) {
+    if (list.length != weights.length)
+        throw new Error("list and weights must be the same length.");
+    if (list.length == 0)
+        return undefined
+    let target = Math.random() * weights.reduce((prev, cur) => prev + cur);
+    for (let i = 0; i < list.length; i++) {
+        target -= weights[i];
+        if (target <= 0)
+            return list[i];
+    }
+    throw new Error("Something went wrong. This shouldn't be able to happen.");
+}
+
+/**
  * @template T
  * @param {T[]} a 
  * @param {T[]} b 
@@ -333,6 +354,11 @@ class Pawn {
         let skinColorGene = pickRandom(genes.filter((gene) => "skinColor" in gene && "melanin" in gene));
         this.skinColor = RGBA.fromJSON(skinColorGene.skinColor);
         this.melanin = skinColorGene.melanin;
+
+        let allHairColorGenes = genes.filter((gene) => "hairColor" in gene);
+        let hairColorGene = pickRandomWeighted(allHairColorGenes, allHairColorGenes.map((gene) => gene.selectionWeight || 1));
+        this.hairColor = RGBA.fromJSON(hairColorGene.hairColor);
+
         this.favoriteColor.R = Math.floor(Math.random() * 255);
         this.favoriteColor.G = Math.floor(Math.random() * 255);
         this.favoriteColor.B = Math.floor(Math.random() * 255);
@@ -944,30 +970,15 @@ addEventListener("DOMContentLoaded", async (event) => {
 
     buildGenesList(genes);
 
-    firstNameInput.addEventListener("input", (ev) => {
-        pawn.firstName = ev.target.value;
-    });
-    nickNameInput.addEventListener("input", (ev) => {
-        pawn.nickName = ev.target.value;
-    });
-    lastNameInput.addEventListener("input", (ev) => {
-        pawn.lastName = ev.target.value;
-    });
-    favoriteColorPicker.addEventListener("input", (ev) => {
-        pawn.favoriteColor = RGBA.fromHex(ev.target.value);
-    });
-    maleRadioButton.addEventListener("change", (ev) => {
-        pawn.gender = "Male";
-    });
-    femaleRadioButton.addEventListener("change", (ev) => {
-        pawn.gender = "Female";
-    });
-    skinColorPicker.addEventListener("input", (ev) => {
-        pawn.skinColor = RGBA.fromHex(ev.target.value);
-    });
-    hairColorPicker.addEventListener("input", (ev) => {
-        pawn.hairColor = RGBA.fromHex(ev.target.value);
-    });
+    firstNameInput.addEventListener("input", (ev) => pawn.firstName = ev.target.value);
+    nickNameInput.addEventListener("input", (ev) => pawn.nickName = ev.target.value);
+    lastNameInput.addEventListener("input", (ev) => pawn.lastName = ev.target.value);
+
+    favoriteColorPicker.addEventListener("input", (ev) => pawn.favoriteColor = RGBA.fromHex(ev.target.value));
+    maleRadioButton.addEventListener("change", (ev) => pawn.gender = "Male");
+    femaleRadioButton.addEventListener("change", (ev) => pawn.gender = "Female");
+    skinColorPicker.addEventListener("input", (ev) => pawn.skinColor = RGBA.fromHex(ev.target.value));
+    hairColorPicker.addEventListener("input", (ev) => pawn.hairColor = RGBA.fromHex(ev.target.value));
 
     bioAgeInput.addEventListener("change", (ev) => {
         pawn.tickAgeBio = bioAgeInput.value * 3600000;
@@ -983,16 +994,9 @@ addEventListener("DOMContentLoaded", async (event) => {
             bioAgeInput.value = chronAgeInput.value;
         }
     });
-    adulthoodSelect.addEventListener("change", (ev) => {
-        pawn.adulthood = adulthoodSelect.value;
-    });
-    childhoodSelect.addEventListener("change", (ev) => {
-        pawn.childhood = childhoodSelect.value;
-    });
-    openTraitsButton.addEventListener("click", (ev) => {
-        console.log(traitsDialog);
-        traitsDialog.show();
-    });
+    adulthoodSelect.addEventListener("change", (ev) => pawn.adulthood = adulthoodSelect.value);
+    childhoodSelect.addEventListener("change", (ev) => pawn.childhood = childhoodSelect.value);
+    openTraitsButton.addEventListener("click", (ev) => traitsDialog.show());
 
     /**
      * @param {HTMLInputElement} input 

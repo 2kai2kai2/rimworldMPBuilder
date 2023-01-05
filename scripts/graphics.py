@@ -11,6 +11,7 @@ def loadGraphics(directory: str, tileSize: Tuple[int, int], fileStrs: List[str],
     Assumes file format is png
     fileStrs: a list in the format e.g. "UI/Icons/Genes/Gene_Something"
     """
+    fileStrs.sort()
     files: Dict[str, Path] = {}
     for f in fileStrs:
         p = next(Path(directory).resolve().rglob(f"*/{f}.[pP][nN][gG]"), None)
