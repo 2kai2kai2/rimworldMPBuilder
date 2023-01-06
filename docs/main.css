@@ -103,6 +103,26 @@ dialog#traitsDialog button#traitsDialogCloseButton {
 }
 
 /* MainDiv -> right column specific */
+.passionButton {
+    width: 24px;
+    height: 24px;
+    object-fit: cover;
+    float: right;
+    margin-left: 4px;
+}
+.passionButton:hover {
+    background-color: #2A2B2C;
+}
+.passionButton[level="0"] {
+    object-position: -100%;
+}
+.passionButton[level="1"] {
+    object-position: 0;
+}
+.passionButton[level="2"] {
+    object-position: 100%;
+}
+
 div.skillDiv {
     margin: 0.5em;
 }

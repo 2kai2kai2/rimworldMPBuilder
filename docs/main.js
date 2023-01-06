@@ -828,6 +828,31 @@ var socialInput;
 /** @type {HTMLInputElement} */
 var intellectualInput;
 
+/** @type {HTMLImageElement} */
+var shootingPassion;
+/** @type {HTMLImageElement} */
+var meleePassion;
+/** @type {HTMLImageElement} */
+var constructionPassion;
+/** @type {HTMLImageElement} */
+var miningPassion;
+/** @type {HTMLImageElement} */
+var cookingPassion;
+/** @type {HTMLImageElement} */
+var plantsPassion;
+/** @type {HTMLImageElement} */
+var animalsPassion;
+/** @type {HTMLImageElement} */
+var craftingPassion;
+/** @type {HTMLImageElement} */
+var artisticPassion;
+/** @type {HTMLImageElement} */
+var medicinePassion;
+/** @type {HTMLImageElement} */
+var socialPassion;
+/** @type {HTMLImageElement} */
+var intellectualPassion;
+
 /** @type {HTMLDivElement} */
 var geneHeaderDiv;
 /** @type {HTMLDivElement} */
@@ -876,6 +901,19 @@ function loadHTMLElements() {
     medicineInput = document.getElementById("medicineInput");
     socialInput = document.getElementById("socialInput");
     intellectualInput = document.getElementById("intellectualInput");
+
+    shootingPassion = document.getElementById("shootingPassion");
+    meleePassion = document.getElementById("meleePassion");
+    constructionPassion = document.getElementById("constructionPassion");
+    miningPassion = document.getElementById("miningPassion");
+    cookingPassion = document.getElementById("cookingPassion");
+    plantsPassion = document.getElementById("plantsPassion");
+    animalsPassion = document.getElementById("animalsPassion");
+    craftingPassion = document.getElementById("craftingPassion");
+    artisticPassion = document.getElementById("artisticPassion");
+    medicinePassion = document.getElementById("medicinePassion");
+    socialPassion = document.getElementById("socialPassion");
+    intellectualPassion = document.getElementById("intellectualPassion");
 
     // Genotype
     geneHeaderDiv = document.getElementById("geneHeaderDiv");
@@ -968,6 +1006,19 @@ addEventListener("DOMContentLoaded", async (event) => {
     socialInput.value = pawn.skills.Social;
     intellectualInput.value = pawn.skills.Intellectual;
 
+    shootingPassion.setAttribute("level", pawn.skills.ShootingFlames);
+    meleePassion.setAttribute("level", pawn.skills.MeleeFlames);
+    constructionPassion.setAttribute("level", pawn.skills.ConstructionFlames);
+    miningPassion.setAttribute("level", pawn.skills.MiningFlames);
+    cookingPassion.setAttribute("level", pawn.skills.CookingFlames);
+    plantsPassion.setAttribute("level", pawn.skills.PlantsFlames);
+    animalsPassion.setAttribute("level", pawn.skills.AnimalsFlames);
+    craftingPassion.setAttribute("level", pawn.skills.CraftingFlames);
+    artisticPassion.setAttribute("level", pawn.skills.ArtisticFlames);
+    medicinePassion.setAttribute("level", pawn.skills.MedicineFlames);
+    socialPassion.setAttribute("level", pawn.skills.SocialFlames);
+    intellectualPassion.setAttribute("level", pawn.skills.IntellectualFlames);
+
     buildGenesList(genes);
 
     firstNameInput.addEventListener("input", (ev) => pawn.firstName = ev.target.value);
@@ -1019,6 +1070,29 @@ addEventListener("DOMContentLoaded", async (event) => {
     addSkillChangeListener(medicineInput, "Medicine");
     addSkillChangeListener(socialInput, "Social");
     addSkillChangeListener(intellectualInput, "Intellectual");
+    /**
+     * @param {HTMLImageElement} input
+     * @param {string} skill
+     */
+    function addPassionChangeListener(input, skill) {
+        input.setAttribute("level", pawn.skills[skill + "Flames"]);
+        input.addEventListener("click", (ev) => {
+            pawn.skills[skill + "Flames"] = (pawn.skills[skill + "Flames"] + 1) % 3;
+            input.setAttribute("level", pawn.skills[skill + "Flames"]);
+        });
+    }
+    addPassionChangeListener(shootingPassion, "Shooting");
+    addPassionChangeListener(meleePassion, "Melee");
+    addPassionChangeListener(constructionPassion, "Construction");
+    addPassionChangeListener(miningPassion, "Mining");
+    addPassionChangeListener(cookingPassion, "Cooking");
+    addPassionChangeListener(plantsPassion, "Plants");
+    addPassionChangeListener(animalsPassion, "Animals");
+    addPassionChangeListener(craftingPassion, "Crafting");
+    addPassionChangeListener(artisticPassion, "Artistic");
+    addPassionChangeListener(medicinePassion, "Medicine");
+    addPassionChangeListener(socialPassion, "Social");
+    addPassionChangeListener(intellectualPassion, "Intellectual");
 
     submitButton.addEventListener("click", async (ev) => {
         // verify?
