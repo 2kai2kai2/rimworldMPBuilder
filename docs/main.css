@@ -54,7 +54,23 @@ div.minorDiv {
 #exportDiv:hover>input, #exportDiv:hover>hr {
     display: inherit;
 }
-
+/* MainDiv -> left column */
+#maleRadioButton, #femaleRadioButton {
+    appearance: none;
+    color:#9b9b9b;
+}
+#maleRadioButton::before {
+    content: "♂";
+    font-weight: 900;
+}
+#femaleRadioButton::before {
+    content: "♀";
+    font-weight: 900;
+}
+#maleRadioButton:checked, #femaleRadioButton:checked {
+    color: #E6E6E6;
+}
+ 
 /* MainDiv -> middle column specific */
 div.ageDiv {
     margin: 0.5em;
