@@ -55,7 +55,7 @@ class Ruleset {
     }
 
     constructor(obj = {}) {
-        Object.assign(this, obj)
+        Object.assign(this, obj);
     }
 }
 
@@ -96,147 +96,7 @@ function pickRandomWeighted(list, weights) {
  * @returns {bool}
  */
 function anyMatch(a, b) {
-    for (const item of a) {
-        if (b.includes(item))
-            return true;
-    }
-    return false;
-}
-
-/**
- * Adds a number, but as a string
- * @param {string} text 
- * @param {number} num
- * @returns {string}
- */
-function addStrInt(text, num) {
-    return (Number.parseInt(text) + num).toString()
-}
-
-/**
- * parses a string of the format `"a,b, c,  d,e"` -> `["a", "b", "c", "d", "e"]` (whitespace is trimmed)
- * @param {string} text 
- * @param {string[]}
- */
-function parseCommaList(text) {
-    let items = text.split(",");
-    return items.map((value) => value.trim()).filter((value) => value.length != 0);
-}
-
-/**
- * @param {Object.<string, number>} skills 
- * @returns {string}
- */
-function skillsDesc(skills) {
-    let out = "";
-    for (const skill in skills) {
-        out += `\n${skill}: ${skills[skill] < 0 ? "" : "+"}${skills[skill]}`;
-    }
-    return out
-}
-/**
- * @param {Object.<string, number>} statOffsets 
- * @returns {string}
- */
-function statOffsetDesc(statOffsets) {
-    let out = "";
-    for (const stat in statOffsets) {
-        out += `\n${stat}: ${statOffsets[stat] < 0 ? "" : "+"}${statOffsets[stat]}`;
-    }
-    return out;
-}
-/**
- * @param {Object.<string, number>} statFactors 
- * @returns {string}
- */
-function statFactorDesc(statFactors) {
-    let out = "";
-    for (const stat in statFactors) {
-        out += `\n${stat}: ${statFactors[stat] * 100}%`;
-    }
-    return out;
-}
-/**
- * @param {string[]} disabledWork 
- * @returns {string}
- */
-function disabledWorkDesc(disabledWork) {
-    let out = "";
-    for (const value of disabledWork) {
-        out += `\n${value} disabled`;
-    }
-    return out;
-}
-/**
- * @param {Object.<string, number>} requiredTraits 
- * @returns {string}
- */
-function requiredTraitDesc(requiredTraits) {
-    let out = "";
-    for (const key in requiredTraits) {
-        let label = traits.find((value) => value.name == key).degrees[requiredTraits[key].toString()].label;
-        out += `\nForced trait: ${label}`
-    }
-    return out;
-}
-
-class RGBA {
-    R;
-    G;
-    B;
-    A;
-    constructor(R = 0, G = 0, B = 0, A = 1) {
-        this.R = R; this.B = B; this.G = G; this.A = A;
-    }
-
-    asHex() {
-        return "#" + this.R.toString(16).padStart(2, "0") + this.G.toString(16).padStart(2, "0") + this.B.toString(16).padStart(2, "0");
-    }
-
-    /**
-     * @returns {{H: number, S: number, V: number, A: number}}
-     */
-    asHSV() {
-        let R01 = this.R / 255.0, G01 = this.G / 255.0, B01 = this.B / 255.0;
-        let max = Math.max(R01, G01, B01);
-        let min = Math.min(R01, G01, B01);
-        let chroma = max - min;
-        let hue = chroma === 0 ? 0 :
-            R01 >= G01 && R01 >= B01 ? ((G01 - B01) / chroma) :
-                G01 >= B01 && G01 >= R01 ? ((B01 - R01) / chroma) + 2 :
-                    ((R01 - G01) / chroma) + 4;
-        return {
-            H: hue * 60,
-            S: max === 0 ? 0 : chroma / max,
-            V: max,
-            A: this.A
-        };
-    }
-    /**
-     * @param {string} hex 
-     * @returns {RGBA}
-     */
-    static fromHex(hex) {
-        hex = hex.replace("#", "").trim();
-        if (hex.length == 6)
-            return new RGBA(Number.parseInt(hex.substring(0, 2), 16),
-                Number.parseInt(hex.substring(2, 4), 16),
-                Number.parseInt(hex.substring(4, 6), 16));
-        else if (hex.length == 8)
-            return new RGBA(Number.parseInt(hex.substring(0, 2), 16),
-                Number.parseInt(hex.substring(2, 4), 16),
-                Number.parseInt(hex.substring(4, 6), 16),
-                Number.parseInt(hex.substring(6, 8), 16))
-        else
-            throw new Error("Invalid color hex string");
-    }
-    /**
-     * @param {{R: number, G: number, B: number, A?: number}} obj 
-     * @returns {RGBA}
-     */
-    static fromJSON(obj) {
-        return new RGBA(obj.R, obj.G, obj.B, "A" in obj ? obj.A : 1);
-    }
+    return a.some((value) => b.includes(value));
 }
 
 class Genotype {
@@ -258,7 +118,7 @@ class Genotype {
      * @param {{xenotype: string, endogenes: string[], xenogenes: string[]}} obj 
      */
     constructor(obj = {}) {
-        Object.assign(this, obj)
+        Object.assign(this, obj);
     }
 
     stats() {
@@ -314,7 +174,7 @@ class Skills {
     }
 
     constructor(obj = {}) {
-        Object.assign(this, obj)
+        Object.assign(this, obj);
     }
 }
 
@@ -345,8 +205,6 @@ class Pawn {
     skills = new Skills()
     /** @type {Object.<string, number>} */
     traits = {};
-    // apparel default
-    // ideology placeholder
 
     constructor(doInit = true) {
         if (!doInit)
@@ -405,19 +263,10 @@ class Pawn {
  */
 function buildBackstorySelect(select, backstoryList) {
     backstoryList.sort((a, b) => a.title.toLowerCase() < b.title.toLowerCase() ? -1 : 1);
-    backstoryList.forEach((backstory, bs_index, bs_array) => {
-        let desc = backstory.desc;
-        if (backstory.skills.length > 0) desc += "\n";
-        for (const skill in backstory.skills) {
-            desc += `\n${skill}: ${backstory.skills[skill] < 0 ? "" : "+"}${backstory.skills[skill]}`
-        };
-        if (backstory.disabledWork.length > 0) desc += "\n";
-        backstory.disabledWork.forEach((value, index, array) => {
-            desc += `\n${value} disabled`
-        })
+    backstoryList.forEach((backstory) => {
         let element = document.createElement("option");
         element.value = backstory.name;
-        element.title = desc;
+        element.title = buildBackstoryDescription(backstory);
         element.text = backstory.title;
         select.appendChild(element);
     });
@@ -449,29 +298,11 @@ function buildTraitsDialog(traitList) {
     for (const trait of traitList) {
         for (const degKey in trait.degrees) {
             const degree = trait.degrees[degKey];
-            let desc = degree.desc;
-            if (degree.skills !== undefined && degree.skills.length > 0) {
-                desc += "\n";
-                for (const skill in degree.skills) {
-                    desc += `\n${skill}: ${degree.skills[skill] < 0 ? "" : "+"}${degree.skills[skill]}`
-                };
-            }
-            if (degree.meditationTypes !== undefined && degree.meditationTypes.length > 0) {
-                desc += "\n\nEnables meditation focus types:";
-                for (const value of degree.meditationTypes) {
-                    desc += `\n- ${value}`;
-                }
-            }
-            if (trait.disabledWork !== undefined && trait.disabledWork.length > 0) {
-                desc += "\n";
-                for (const value of trait.disabledWork) {
-                    desc += `\n${value} disabled`;
-                }
-            }
+
             let div = document.createElement("div");
             let label = document.createElement("label");
             let check = document.createElement("input");
-            div.title = desc;
+            div.title = buildTraitDegreeDescription(trait, degree);
 
             check.type = "checkbox";
             check.value = `${trait.name}:${degKey}`;
@@ -483,7 +314,7 @@ function buildTraitsDialog(traitList) {
             check.setAttribute("conflictingTraits", trait.conflictingTraits.join(","));
             check.setAttribute("conflicts", "0");
 
-            // Change event
+            /** Local function; sets all other applicable trait degrees as conflicted */
             function setConflicts() {
                 scrollBox.querySelectorAll("input").forEach((other) => {
                     if (other.id === check.id)
@@ -495,6 +326,7 @@ function buildTraitsDialog(traitList) {
                     }
                 });
             }
+            /** Local function; unsets all other applicable trait degrees conflicts */
             function unsetConflicts() {
                 scrollBox.querySelectorAll("input").forEach((other) => {
                     if (other.id === check.id)
@@ -507,6 +339,7 @@ function buildTraitsDialog(traitList) {
                     }
                 });
             }
+            // Change event
             check.onchange = (ev) => {
                 if (check.checked) {
                     setConflicts();
@@ -517,7 +350,7 @@ function buildTraitsDialog(traitList) {
                 }
             }
 
-            // Check if the pawn has the trait
+            // Check if the pawn has the trait at load time
             if (trait.name in pawn.traits && pawn.traits[trait.name].toString() == degKey) {
                 check.checked = true;
                 postBuildCallbacks.push(setConflicts);
@@ -528,9 +361,8 @@ function buildTraitsDialog(traitList) {
             div.append(check);
         }
     }
-    for (const callback of postBuildCallbacks) {
+    for (const callback of postBuildCallbacks)
         callback();
-    }
 }
 
 /** 
@@ -539,16 +371,34 @@ function buildTraitsDialog(traitList) {
 function updateGeneStats() {
     let stats = pawn.genotype.stats();
     complexityElement.textContent = stats.complexity.toString();
-    metabolismElement.textContent = (stats.metabolism < 0 ? "" : "+") + stats.metabolism.toString();
+    metabolismElement.textContent = formatNumberSigned(stats.metabolism);
     // Metabolism can go lower, but food percent will never drop below 50% in game
     let foodPercent = Math.max(100 + (stats.metabolism < 0 ? -25 * stats.metabolism : -10 * stats.metabolism), 50);
     foodPercentElement.textContent = foodPercent.toString() + "%";
+}
+
+
+/**
+ * @param {Gene} gene 
+ * @param {string} id The id that the input HTML element should have
+ * @returns {HTMLInputElement}
+ */
+function buildGeneCheckbox(gene, id) {
+    let out = document.createElement("input");
+    out.id = id;
+    out.hidden = true;
+    out.value = gene.name;
+    out.type = "checkbox";
+    out.setAttribute("conflicts", "0");
+    out.setAttribute("exclusionTags", (gene.exclusionTags || []).join(","));
+    return out;
 }
 
 /**
  * @param {Gene[]} geneList 
  */
 function buildGenesList(geneList) {
+    // Sort genes into categories
     /** @type {Map<string, Gene[]>} */
     let categories = new Map();
     for (const gene of geneList) {
@@ -560,7 +410,7 @@ function buildGenesList(geneList) {
             catList.push(gene);
     }
 
-    // GFX
+    // Selected genes/gene stats sticky graphics
     window.addEventListener("scroll", (ev) => {
         let selectedRect = selectedGenesDiv.getBoundingClientRect();
         if (selectedRect.top < 0) {
@@ -584,106 +434,83 @@ function buildGenesList(geneList) {
 
     /** @type {Function[]} */
     let postBuildCallbacks = [];
-    categories.forEach((value, key, map) => {
-        value.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
-
+    categories.forEach((catEntries, catName) => {
+        catEntries.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+        // vvv Build category header (label) vvv
         let categoryLabelDiv = document.createElement("div");
-        categoryLabelDiv.id = `geneCategoryLabelDiv${key}`;
+        categoryLabelDiv.id = `geneCategoryLabelDiv${catName}`;
         categoryLabelDiv.className = "geneCategoryLabelDiv";
         let categoryLabel = document.createElement("label");
-        categoryLabel.id = `geneCategoryLabel${key}`;
+        categoryLabel.id = `geneCategoryLabel${catName}`;
         categoryLabel.className = "geneCategoryLabel";
-        categoryLabel.textContent = key;
+        categoryLabel.textContent = catName;
         categoryLabelDiv.append(categoryLabel);
         geneListDiv.append(categoryLabelDiv);
-
+        // vvv Build category body (entries) vvv
         let categoryGenesDiv = document.createElement("div");
-        categoryGenesDiv.id = `geneCategoryListDiv${key}`;
+        categoryGenesDiv.id = `geneCategoryListDiv${catName}`;
         categoryGenesDiv.className = "geneCategoryListDiv";
-        for (const gene of value) {
-            let desc = gene.desc || "";
-            if (gene.skills)
-                desc += "\n" + skillsDesc(gene.skills);
-
-            if (gene.statOffsets || gene.statFactors || gene.damageFactors)
-                desc += "\n";
-            if (gene.statOffsets)
-                desc += statOffsetDesc(gene.statOffsets);
-            if (gene.statFactors)
-                desc += statFactorDesc(gene.statFactors);
-            if (gene.damageFactors)
-                desc += statFactorDesc(gene.damageFactors);
-
-            if (gene.traits)
-                desc += "\n" + requiredTraitDesc(gene.traits);
-            if (gene.disabledWork)
-                desc += "\n" + disabledWorkDesc(gene.disabledWork);
-
+        for (const gene of catEntries) {
+            let desc = buildGeneDescription(gene);
+            // vvv Build gene item in category body vvv
+            // v Build gene label v
             let geneElement = document.createElement("label");
             geneElement.htmlFor = `geneCheckbox${gene.name}`;
             geneElement.className = "geneListItem";
             let geneImage = document.createElement("img");
-            let imgStyle = `width: 128px; height: 128px; background-image: url(./genes.png); background-clip: border-box; background-position: -${gene.iconPath.x}px -${gene.iconPath.y}px;`;
-            /** @type {RGBA | {R: number, G: number, B: number, A: number}} */
-            let mixColor = gene.skinColor || gene.skinColorOverride || gene.hairColor;
-            if (mixColor) {
-                mixColor = RGBA.fromJSON(mixColor);
-                imgStyle += `filter: url(#${colorizer(mixColor).id});`;
-            }
-            geneImage.style = imgStyle;
+            geneImage.style = buildGeneImageStyle(gene);
             geneElement.append(geneImage);
-
             geneElement.append(gene.label || gene.name);
             geneElement.title = desc;
-            let geneCheckbox = document.createElement("input");
-            geneCheckbox.id = geneElement.htmlFor;
-            geneCheckbox.hidden = true;
-            geneCheckbox.value = gene.name;
-            geneCheckbox.type = "checkbox";
-            geneCheckbox.setAttribute("conflicts", "0");
-            geneCheckbox.setAttribute("exclusionTags", (gene.exclusionTags || []).join(","));
+            // v Build gene checkbox v
+            let geneCheckbox = buildGeneCheckbox(gene, geneElement.htmlFor);
 
             categoryGenesDiv.append(geneElement, geneCheckbox);
 
+            /** Local to a specific gene; disables all conflicting genes from being selected */
             function setConflicts() {
-                geneListDiv.querySelectorAll("input").forEach((other) => {
+                for (const other of geneListDiv.querySelectorAll("input")) {
                     if (other.id === geneCheckbox.id)
-                        return;
-                    if (hasConflict(gene, other)) {
-                        let prevConflicts = other.getAttribute("conflicts");
-                        other.setAttribute("conflicts", addStrInt(prevConflicts, 1));
-                        if (!other.disabled) {
-                            other.disabled = true;
-                            /** @type {HTMLLabelElement} */
-                            let otherLabel = geneListDiv.querySelector(`label[for="${other.id}"]`)
-                            otherLabel.style = "border-color:red;";
-                        }
+                        continue;
+                    if (!hasConflict(gene, other))
+                        continue;
+
+                    let prevConflicts = other.getAttribute("conflicts");
+                    other.setAttribute("conflicts", addStrInt(prevConflicts, 1));
+                    if (!other.disabled) {
+                        other.disabled = true;
+                        /** @type {HTMLLabelElement} */
+                        let otherLabel = geneListDiv.querySelector(`label[for="${other.id}"]`)
+                        otherLabel.style = "border-color:red;";
                     }
-                });
+                }
             }
+            /** Local to a specific gene; removes this conflict all conflicting genes */
             function unsetConflicts() {
-                geneListDiv.querySelectorAll("input").forEach((other) => {
+                for (const other of geneListDiv.querySelectorAll("input")) {
                     if (other.id === geneCheckbox.id)
-                        return;
-                    if (hasConflict(gene, other)) {
-                        let newConflictCount = addStrInt(other.getAttribute("conflicts"), -1);
-                        other.setAttribute("conflicts", newConflictCount);
-                        if (newConflictCount === "0") {
-                            other.disabled = false;
-                            /** @type {HTMLLabelElement} */
-                            let otherLabel = geneListDiv.querySelector(`label[for="${other.id}"]`)
-                            otherLabel.style = undefined;
-                        }
+                        continue;
+                    if (!hasConflict(gene, other))
+                        continue;
+
+                    let newConflictCount = addStrInt(other.getAttribute("conflicts"), -1);
+                    other.setAttribute("conflicts", newConflictCount);
+                    if (newConflictCount === "0") {
+                        other.disabled = false;
+                        /** @type {HTMLLabelElement} */
+                        let otherLabel = geneListDiv.querySelector(`label[for="${other.id}"]`)
+                        otherLabel.style = undefined;
                     }
-                });
+                }
             }
+            /** Local to a specific gene; Adds a label for the gene to the selectedGenesDiv */
             function addSelected() {
                 let selectedGeneElement = document.createElement("label");
                 selectedGeneElement.htmlFor = geneElement.htmlFor;
                 selectedGeneElement.className = "geneSelectedItem";
 
                 let selectedGeneImage = document.createElement("img");
-                selectedGeneImage.style = imgStyle; // Applying the same imgStyle from earlier
+                selectedGeneImage.style = geneImage.getAttribute("style");
                 selectedGeneElement.append(selectedGeneImage);
 
                 selectedGeneElement.append(gene.label || gene.name);
@@ -701,7 +528,7 @@ function buildGenesList(geneList) {
                     if ("skinColor" in gene) {
                         // Don't change skin color if there's already an override
                         let hasOverride = pawn.genotype.xenogenes.some((value) => "skinColorOverride" in genes.find((g) => g.name == value));
-                        if (hasOverride) {
+                        if (!hasOverride) {
                             pawn.skinColor = RGBA.fromJSON(gene.skinColor);
                             skinColorPicker.value = pawn.skinColor.asHex();
                         }
@@ -725,7 +552,7 @@ function buildGenesList(geneList) {
                     addSelected();
                     setConflicts();
                     updateGeneStats();
-                } else {
+                } else { // Disabling gene
                     if ("endogeneCategory" in gene) {
                         let index = pawn.genotype.endogenes.indexOf(gene.name);
                         pawn.genotype.endogenes.splice(index, 1);
@@ -743,9 +570,9 @@ function buildGenesList(geneList) {
                             skinColorPicker.value = pawn.skinColor.asHex();
                         }
                     }
+
                     // Remove selected label
                     selectedGenesDiv.querySelector(`label.geneSelectedItem[for='${geneCheckbox.id}']`).remove();
-
                     unsetConflicts();
                     updateGeneStats();
                 }
@@ -929,15 +756,57 @@ function loadHTMLElements() {
     filterDefs = document.getElementById("filterDefs");
 }
 
+function applyPawnData() {
+    firstNameInput.value = pawn.firstName;
+    nickNameInput.value = pawn.nickName;
+    lastNameInput.value = pawn.lastName;
+    if (pawn.gender === "Male")
+        maleRadioButton.checked = true;
+    else
+        femaleRadioButton.checked = true;
+    favoriteColorPicker.value = pawn.favoriteColor.asHex();
+    skinColorPicker.value = pawn.skinColor.asHex();
+    hairColorPicker.value = pawn.hairColor.asHex();
+    bioAgeInput.value = Math.floor(pawn.tickAgeBio / 3600000);
+    chronAgeInput.value = Math.floor(pawn.tickAgeChron / 3600000);
+    buildBackstorySelect(adulthoodSelect, adulthoods);
+    buildBackstorySelect(childhoodSelect, childhoods);
+    adulthoodSelect.value = pawn.adulthood;
+    childhoodSelect.value = pawn.childhood;
+    buildTraitsDialog(traits);
+
+    shootingInput.value = pawn.skills.Shooting;
+    meleeInput.value = pawn.skills.Melee;
+    constructionInput.value = pawn.skills.Construction;
+    miningInput.value = pawn.skills.Mining;
+    cookingInput.value = pawn.skills.Cooking;
+    plantsInput.value = pawn.skills.Plants;
+    animalsInput.value = pawn.skills.Animals;
+    craftingInput.value = pawn.skills.Crafting;
+    artisticInput.value = pawn.skills.Artistic;
+    medicineInput.value = pawn.skills.Medicine;
+    socialInput.value = pawn.skills.Social;
+    intellectualInput.value = pawn.skills.Intellectual;
+
+    shootingPassion.setAttribute("level", pawn.skills.ShootingFlames);
+    meleePassion.setAttribute("level", pawn.skills.MeleeFlames);
+    constructionPassion.setAttribute("level", pawn.skills.ConstructionFlames);
+    miningPassion.setAttribute("level", pawn.skills.MiningFlames);
+    cookingPassion.setAttribute("level", pawn.skills.CookingFlames);
+    plantsPassion.setAttribute("level", pawn.skills.PlantsFlames);
+    animalsPassion.setAttribute("level", pawn.skills.AnimalsFlames);
+    craftingPassion.setAttribute("level", pawn.skills.CraftingFlames);
+    artisticPassion.setAttribute("level", pawn.skills.ArtisticFlames);
+    medicinePassion.setAttribute("level", pawn.skills.MedicineFlames);
+    socialPassion.setAttribute("level", pawn.skills.SocialFlames);
+    intellectualPassion.setAttribute("level", pawn.skills.IntellectualFlames);
+}
+
 // And the data thingies
 /** @type {Ruleset} */
 var ruleset;
 /** @type {Pawn} */
 var pawn;
-/** @type {Backstory} */
-var childhoodCache;
-/** @type {Backstory} */
-var adulthoodCache;
 /** @type {string} */
 var gameID;
 /** @type {string} */
@@ -972,55 +841,11 @@ addEventListener("DOMContentLoaded", async (event) => {
 
 
     loadHTMLElements();
-
-
-    firstNameInput.value = pawn.firstName;
-    nickNameInput.value = pawn.nickName;
-    lastNameInput.value = pawn.lastName;
-    if (pawn.gender === "Male")
-        maleRadioButton.checked = true;
-    else
-        femaleRadioButton.checked = true;
-    favoriteColorPicker.value = pawn.favoriteColor.asHex();
-    skinColorPicker.value = pawn.skinColor.asHex();
-    hairColorPicker.value = pawn.hairColor.asHex();
-    bioAgeInput.value = Math.floor(pawn.tickAgeBio / 3600000);
-    chronAgeInput.value = Math.floor(pawn.tickAgeChron / 3600000);
-    buildBackstorySelect(adulthoodSelect, adulthoods);
-    buildBackstorySelect(childhoodSelect, childhoods);
-    adulthoodSelect.value = pawn.adulthood;
-    childhoodSelect.value = pawn.childhood;
-    buildTraitsDialog(traits);
-    // set value
-
-    shootingInput.value = pawn.skills.Shooting;
-    meleeInput.value = pawn.skills.Melee;
-    constructionInput.value = pawn.skills.Construction;
-    miningInput.value = pawn.skills.Mining;
-    cookingInput.value = pawn.skills.Cooking;
-    plantsInput.value = pawn.skills.Plants;
-    animalsInput.value = pawn.skills.Animals;
-    craftingInput.value = pawn.skills.Crafting;
-    artisticInput.value = pawn.skills.Artistic;
-    medicineInput.value = pawn.skills.Medicine;
-    socialInput.value = pawn.skills.Social;
-    intellectualInput.value = pawn.skills.Intellectual;
-
-    shootingPassion.setAttribute("level", pawn.skills.ShootingFlames);
-    meleePassion.setAttribute("level", pawn.skills.MeleeFlames);
-    constructionPassion.setAttribute("level", pawn.skills.ConstructionFlames);
-    miningPassion.setAttribute("level", pawn.skills.MiningFlames);
-    cookingPassion.setAttribute("level", pawn.skills.CookingFlames);
-    plantsPassion.setAttribute("level", pawn.skills.PlantsFlames);
-    animalsPassion.setAttribute("level", pawn.skills.AnimalsFlames);
-    craftingPassion.setAttribute("level", pawn.skills.CraftingFlames);
-    artisticPassion.setAttribute("level", pawn.skills.ArtisticFlames);
-    medicinePassion.setAttribute("level", pawn.skills.MedicineFlames);
-    socialPassion.setAttribute("level", pawn.skills.SocialFlames);
-    intellectualPassion.setAttribute("level", pawn.skills.IntellectualFlames);
+    applyPawnData();
 
     buildGenesList(genes);
 
+    // vvv Build Event Handlers vvv
     firstNameInput.addEventListener("input", (ev) => pawn.firstName = ev.target.value);
     nickNameInput.addEventListener("input", (ev) => pawn.nickName = ev.target.value);
     lastNameInput.addEventListener("input", (ev) => pawn.lastName = ev.target.value);
@@ -1054,9 +879,7 @@ addEventListener("DOMContentLoaded", async (event) => {
      * @param {string} skill 
      */
     function addSkillChangeListener(input, skill) {
-        input.addEventListener("change", (ev) => {
-            pawn.skills[skill] = Number.parseInt(input.value);
-        });
+        input.addEventListener("change", (ev) => pawn.skills[skill] = Number.parseInt(input.value));
     }
     addSkillChangeListener(shootingInput, "Shooting");
     addSkillChangeListener(meleeInput, "Melee");
@@ -1075,7 +898,6 @@ addEventListener("DOMContentLoaded", async (event) => {
      * @param {string} skill
      */
     function addPassionChangeListener(input, skill) {
-        input.setAttribute("level", pawn.skills[skill + "Flames"]);
         input.addEventListener("click", (ev) => {
             pawn.skills[skill + "Flames"] = (pawn.skills[skill + "Flames"] + 1) % 3;
             input.setAttribute("level", pawn.skills[skill + "Flames"]);
@@ -1094,43 +916,61 @@ addEventListener("DOMContentLoaded", async (event) => {
     addPassionChangeListener(socialPassion, "Social");
     addPassionChangeListener(intellectualPassion, "Intellectual");
 
-    submitButton.addEventListener("click", async (ev) => {
-        // verify?
-        pawn.save();
-        if (token === null) {
-            let r = await fetch(`${serverURL}/pawn`, {
-                method: "POST",
-                headers: { "gameID": gameID },
-                body: window.localStorage.getItem(`${gameID}:PAWN`)
-            });
-            if (r.ok) {
-                /** @type {ResponseJSON_POST_Game} */
-                let rbody = await r.json();
+    // vvv Build Submit Button Handler vvv
+    /**
+     * @returns {Promise<string>} Output message, if successful
+     * @throws if not successful
+     */
+    async function postPawn() {
+        return fetch(`${serverURL}/pawn`, {
+            method: "POST",
+            headers: { "gameID": gameID },
+            body: window.localStorage.getItem(`${gameID}:PAWN`)
+        }).then(async (r) => {
+            if (!r.ok)
+                return r.json().then((/** @type {ResponseJSON_Error} */ rbody) => {
+                    throw new Error("Could not save to server: " + rbody.error);
+                });
+            return r.json().then((/** @type {ResponseJSON_POST_Game} */ rbody) => {
                 if (rbody.gameID !== gameID)
                     throw new Error("Recieved response with invalid gameID: " + rbody.gameID);
                 token = rbody.token;
                 localStorage.setItem(`${gameID}:TOKEN`, token)
-                alert("Saved!");
-            } else {
-                /** @type {ResponseJSON_Error} */
-                let rbody = await r.json();
-                alert("Could not save to server: " + rbody.error);
-            }
-        } else {
-            let r = await fetch(`${serverURL}/pawn`, {
-                method: "PUT",
-                headers: { "gameID": gameID, "token": token },
-                body: window.localStorage.getItem(`${gameID}:PAWN`)
+                return "saved!";
             });
-            if (r.ok) {
-                alert("Saved!");
-            } else {
-                /** @type {ResponseJSON_Error} */
-                let rbody = await r.json();
-                alert("Could not save to server: " + rbody.error);
-            }
+        });
+    }
+    /**
+     * @returns {Promise<string>} Output message, if successful
+     * @throws if not successful
+     */
+    async function putPawn() {
+        fetch(`${serverURL}/pawn`, {
+            method: "PUT",
+            headers: { "gameID": gameID, "token": token },
+            body: window.localStorage.getItem(`${gameID}:PAWN`)
+        }).then(async (r) => {
+            if (!r.ok)
+                return r.json().then((/** @type {ResponseJSON_Error} */ rbody) => {
+                    throw new Error("Could not save to server: " + rbody.error);
+                });
+            return "Saved!";
+        });
+    }
+    submitButton.addEventListener("click", async (ev) => {
+        // verify?
+        pawn.save();
+        if (token === null) {
+            postPawn()
+                .then((message) => alert(message))
+                .catch((err) => alert(err.message || "Error!"));
+        } else {
+            putPawn()
+                .then((message) => alert(message))
+                .catch((err) => alert(err.message || "Error!"));
         }
     });
+
     exportPresetButton.onclick = async (ev) => {
         // This is really easy to get around but will stop most unskilled or (if you're looking at this) hopefully undedicated spammers (so please don't, thanks :D )
         let clickTime = Date.now();
@@ -1141,24 +981,24 @@ addEventListener("DOMContentLoaded", async (event) => {
         }
         exportPresetButton.setAttribute("lastExport", clickTime);
 
-        fetch(`${serverURL}/game/export`, {method: "GET", headers: {"gameID": gameID}})
-        .then(async (res) => {
-            if (!res.ok) {
-                alert("Error: " + ((await res.json()).error) || "Received bad response; no further information received from server.");
-                return;
-            }
-            res.blob().then((blob) => {
-                let downloader = document.createElement("a");
-                downloader.href = URL.createObjectURL(blob)
-                downloader.download = "preset.pcp";
-                downloader.dispatchEvent(new MouseEvent("click"));
+        fetch(`${serverURL}/game/export`, { method: "GET", headers: { "gameID": gameID } })
+            .then(async (res) => {
+                if (!res.ok) {
+                    alert("Error: " + ((await res.json()).error) || "Received bad response; no further information received from server.");
+                    return;
+                }
+                res.blob().then((blob) => {
+                    let downloader = document.createElement("a");
+                    downloader.href = URL.createObjectURL(blob)
+                    downloader.download = "preset.pcp";
+                    downloader.dispatchEvent(new MouseEvent("click"));
 
-                setTimeout(() => {
-                    URL.revokeObjectURL(downloader.href);
-                    downloader.remove();
+                    setTimeout(() => {
+                        URL.revokeObjectURL(downloader.href);
+                        downloader.remove();
+                    });
                 });
-            });
-        }).catch((err) => alert("Error: " + (err.message || "something went wrong. That's not very helpful, I suppose.")));
+            }).catch((err) => alert("Error: " + (err.message || "something went wrong. That's not very helpful, I suppose.")));
     };
 
     pageCoverDiv.hidden = true;
