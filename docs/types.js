@@ -81,6 +81,31 @@
  * @property {Object.<string, TraitDegree>} degrees
  */
 
+/**
+ * @typedef {Object} HeadType
+ * @property {string} name
+ * @property {{x: number, y: number}} [iconPath]
+ * @property {string} [gender]
+ * @property {string} [randomChosen]
+ * @property {number[]} [hairMeshSize]
+ * @property {number[]} [beardMeshSize]
+ * @property {number[]} [beardOffset]
+ * @property {number} [hairMeshSize]
+ * @property {number[]} [eyeOffsetEastWest]
+ */
+
+/**
+ * @typedef {Object} HairBeardType
+ * @property {string} name
+ * @property {string} label
+ * @property {{x: number, y: number}} [iconPath]
+ * @property {string} [gender]
+ * @property {string} [category]
+ * @property {string[]} [styleTags]
+ * @property {number} [offsetNarrowEast]
+ * @property {number} [offsetNarrowSouth]
+ */
+
 /*
 +-------------------------------------------------------------------------+
 |                                                                         |
